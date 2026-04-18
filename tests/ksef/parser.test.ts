@@ -87,3 +87,63 @@ suite("parseInvoiceFa3: adnotacje", () => {
     assert.equal(inv.adnotacje.pmarzy.pPMarzy, "1");
   });
 });
+
+suite("parseInvoiceFa3: rozliczenie", () => {
+  test("parses the four summary totals from the fixture", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.rozliczenie);
+    assert.equal(inv.rozliczenie.sumaObciazen, 50);
+    assert.equal(inv.rozliczenie.sumaOdliczen, 30);
+    assert.equal(inv.rozliczenie.doZaplaty, 1220);
+    assert.equal(inv.rozliczenie.doRozliczenia, 0);
+  });
+
+  test("parses Obciazenia and Odliczenia child entries", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.rozliczenie);
+    assert.equal(inv.rozliczenie.obciazenia.length, 2);
+    assert.equal(inv.rozliczenie.obciazenia[0].kwota, 30);
+    assert.equal(inv.rozliczenie.obciazenia[0].powod, "Koszt transportu");
+    assert.equal(inv.rozliczenie.obciazenia[1].kwota, 20);
+    assert.equal(inv.rozliczenie.obciazenia[1].powod, "Opakowanie zwrotne");
+    assert.equal(inv.rozliczenie.odliczenia.length, 1);
+    assert.equal(inv.rozliczenie.odliczenia[0].kwota, 30);
+    assert.equal(inv.rozliczenie.odliczenia[0].powod, "Rabat posprzedażowy");
+  });
+
+  test("lists default to [] when Rozliczenie has no child entries", () => {
+    // sample_fa3.xml has no Rozliczenie element at all.
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3.xml"), "K");
+    assert.equal(inv.rozliczenie, null);
+  });
+
+  test("arrays are empty when element exists but children absent", () => {
+    // Build a minimal XML with Rozliczenie but no Obciazenia/Odliczenia.
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Faktura xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="FA (3)" wersjaSchemy="1-0E">FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+    <DataWytworzeniaFa>2026-04-01T10:00:00Z</DataWytworzeniaFa>
+    <SystemInfo>test</SystemInfo>
+  </Naglowek>
+  <Podmiot1><DaneIdentyfikacyjne><NIP>1111111111</NIP><Nazwa>Seller</Nazwa></DaneIdentyfikacyjne></Podmiot1>
+  <Podmiot2><DaneIdentyfikacyjne><NIP>2222222222</NIP><Nazwa>Buyer</Nazwa></DaneIdentyfikacyjne></Podmiot2>
+  <Fa>
+    <KodWaluty>PLN</KodWaluty>
+    <P_1>2026-04-01</P_1>
+    <P_2>INV-1</P_2>
+    <P_15>100</P_15>
+    <Rozliczenie>
+      <SumaObciazen>10.00</SumaObciazen>
+    </Rozliczenie>
+  </Fa>
+</Faktura>`;
+    const inv = parseInvoiceFa3(xml, "K");
+    assert.ok(inv.rozliczenie);
+    assert.equal(inv.rozliczenie.sumaObciazen, 10);
+    assert.equal(inv.rozliczenie.sumaOdliczen, null);
+    assert.deepEqual(inv.rozliczenie.obciazenia, []);
+    assert.deepEqual(inv.rozliczenie.odliczenia, []);
+  });
+});

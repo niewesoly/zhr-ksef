@@ -187,7 +187,19 @@
     <!-- Rozliczenie: all four monetary totals populated so renderer
          shows the full settlement block. -->
     <Rozliczenie>
+      <Obciazenia>
+        <Kwota>30.00</Kwota>
+        <Powod>Koszt transportu</Powod>
+      </Obciazenia>
+      <Obciazenia>
+        <Kwota>20.00</Kwota>
+        <Powod>Opakowanie zwrotne</Powod>
+      </Obciazenia>
       <SumaObciazen>50.00</SumaObciazen>
+      <Odliczenia>
+        <Kwota>30.00</Kwota>
+        <Powod>Rabat posprzedażowy</Powod>
+      </Odliczenia>
       <SumaOdliczen>30.00</SumaOdliczen>
       <DoZaplaty>1220.00</DoZaplaty>
       <DoRozliczenia>0.00</DoRozliczenia>

@@ -150,6 +150,20 @@ export interface Adnotacje {
   pmarzy: AdnotacjePMarzy;
 }
 
+export interface RozliczenieLineItem {
+  kwota: number | null;
+  powod: string | null;
+}
+
+export interface Rozliczenie {
+  sumaObciazen: number | null;
+  sumaOdliczen: number | null;
+  doZaplaty: number | null;
+  doRozliczenia: number | null;
+  obciazenia: RozliczenieLineItem[];
+  odliczenia: RozliczenieLineItem[];
+}
+
 export interface InvoiceFa3 {
   ksefNumber: string;
   header: InvoiceHeader;
@@ -177,6 +191,7 @@ export interface InvoiceFa3 {
   przyczynaKorekty: string | null;
   okresFaKorygowanej: string | null;
   adnotacje: Adnotacje | null;
+  rozliczenie: Rozliczenie | null;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -242,7 +257,7 @@ const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "@_",
   isArray: (name) =>
-    ["FaWiersz", "RachunekBankowy", "DodatkowyOpis", "TerminPlatnosci"].some((n) =>
+    ["FaWiersz", "RachunekBankowy", "DodatkowyOpis", "TerminPlatnosci", "Obciazenia", "Odliczenia"].some((n) =>
       name.endsWith(n),
     ),
   parseAttributeValue: true,
@@ -482,6 +497,30 @@ function parseAdnotacje(fa: Record<string, unknown>): Adnotacje | null {
   };
 }
 
+function parseRozliczenieEntries(
+  rozliczenie: Record<string, unknown>,
+  fieldName: string,
+): RozliczenieLineItem[] {
+  return toArray(findField(rozliczenie, fieldName)).map((row) => ({
+    kwota: findFieldNumber(row, "Kwota"),
+    powod: findFieldString(row, "Powod"),
+  }));
+}
+
+function parseRozliczenie(fa: Record<string, unknown>): Rozliczenie | null {
+  const rozliczenie = findFieldRecord(fa, "Rozliczenie");
+  if (!rozliczenie) return null;
+
+  return {
+    sumaObciazen: findFieldNumber(rozliczenie, "SumaObciazen"),
+    sumaOdliczen: findFieldNumber(rozliczenie, "SumaOdliczen"),
+    doZaplaty: findFieldNumber(rozliczenie, "DoZaplaty"),
+    doRozliczenia: findFieldNumber(rozliczenie, "DoRozliczenia"),
+    obciazenia: parseRozliczenieEntries(rozliczenie, "Obciazenia"),
+    odliczenia: parseRozliczenieEntries(rozliczenie, "Odliczenia"),
+  };
+}
+
 function parseHeader(faktura: Record<string, unknown>): InvoiceHeader {
   const naglowek = findFieldRecord(faktura, "Naglowek");
   if (!naglowek) {
@@ -581,5 +620,6 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     przyczynaKorekty: correctionReason,
     okresFaKorygowanej,
     adnotacje: parseAdnotacje(fa),
+    rozliczenie: parseRozliczenie(fa),
   };
 }
