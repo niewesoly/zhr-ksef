@@ -750,19 +750,22 @@ const WarunkiTransakcjiSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
             <dd>{wt.podmiotPosredniczacy}</dd>
           </>
         ) : null}
-        {wt.rodzajTransportu !== null ? (
-          <>
-            <dt>Rodzaj transportu</dt>
-            <dd>{rodzajTransportu(wt.rodzajTransportu)}</dd>
-          </>
-        ) : null}
-        {wt.numerSrodkaTransportu !== null ? (
-          <>
-            <dt>Numer środka transportu</dt>
-            <dd>{wt.numerSrodkaTransportu}</dd>
-          </>
-        ) : null}
       </dl>
+
+      {wt.transport.length > 0 ? (
+        <>
+          <h4>Transport</h4>
+          <ul class="ksef-list">
+            {wt.transport.map((t, i) => {
+              const parts = [
+                t.rodzajTransportu ? rodzajTransportu(t.rodzajTransportu) : null,
+                t.nrZleceniaTransportu ? `nr zlecenia: ${t.nrZleceniaTransportu}` : null,
+              ].filter((p): p is string => p !== null);
+              return <li key={String(i)}>{parts.join(" — ")}</li>;
+            })}
+          </ul>
+        </>
+      ) : null}
 
       {wt.umowy.length > 0 ? (
         <>

@@ -269,8 +269,10 @@
       <WarunkiDostawy>DAP Warszawa (Incoterms 2020)</WarunkiDostawy>
       <KursUmowny>4.3125</KursUmowny>
       <WalutaUmowna>PLN</WalutaUmowna>
-      <RodzajTransportu>3</RodzajTransportu>
-      <NumerSrodkaTransportu>WX 12345</NumerSrodkaTransportu>
+      <Transport>
+        <RodzajTransportu>3</RodzajTransportu>
+        <NrZleceniaTransportu>ZL-2026-001</NrZleceniaTransportu>
+      </Transport>
       <Umowy>
         <DataUmowy>2026-03-01</DataUmowy>
         <NrUmowy>UM/2026/03/01</NrUmowy>

@@ -456,8 +456,15 @@ function warunkiTransakcji(invoice: InvoiceFa3): ReactElement | null {
   if (wt.kursUmowny) rows.push(dlRow("Kurs umowny:", wt.kursUmowny, true));
   if (wt.walutaUmowna) rows.push(dlRow("Waluta umowna:", wt.walutaUmowna, true));
   if (wt.podmiotPosredniczacy) rows.push(dlRow("Podmiot pośredniczący:", wt.podmiotPosredniczacy, true));
-  if (wt.rodzajTransportu) rows.push(dlRow("Rodzaj transportu:", rodzajTransportu(wt.rodzajTransportu), true));
-  if (wt.numerSrodkaTransportu) rows.push(dlRow("Numer środka transportu:", wt.numerSrodkaTransportu, true));
+  if (wt.transport.length > 0) {
+    rows.push(h(Text, { style: styles.bankTitle }, "Transport"));
+    wt.transport.forEach((t, i) => {
+      const parts: string[] = [];
+      if (t.rodzajTransportu) parts.push(rodzajTransportu(t.rodzajTransportu));
+      if (t.nrZleceniaTransportu) parts.push(`nr zlecenia: ${t.nrZleceniaTransportu}`);
+      rows.push(h(Text, { key: String(i), style: styles.listItem }, `• ${parts.join(" — ")}`));
+    });
+  }
 
   const umowyItems = wt.umowy.map((u, i) => {
     const parts = [u.numer, u.data ? `(${fmtDate(u.data)})` : null].filter((p): p is string => p !== null);

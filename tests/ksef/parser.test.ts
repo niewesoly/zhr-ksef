@@ -157,6 +157,9 @@ suite("parseInvoiceFa3: warunkiTransakcji", () => {
     assert.equal(inv.warunkiTransakcji.umowy[0].numer, "UM/2026/03/01");
     assert.equal(inv.warunkiTransakcji.zamowienia[0].data, "2026-03-20");
     assert.deepEqual(inv.warunkiTransakcji.nrPartiiTowaru, ["PARTIA-A-001", "PARTIA-B-002"]);
+    assert.equal(inv.warunkiTransakcji.transport.length, 1);
+    assert.equal(inv.warunkiTransakcji.transport[0].rodzajTransportu, "3");
+    assert.equal(inv.warunkiTransakcji.transport[0].nrZleceniaTransportu, "ZL-2026-001");
   });
 
   test("returns null when WarunkiTransakcji element is absent", () => {

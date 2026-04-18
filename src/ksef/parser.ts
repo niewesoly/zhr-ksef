@@ -184,11 +184,15 @@ export interface WarunkiTransakcji {
   kursUmowny: string | null;
   walutaUmowna: string | null;
   podmiotPosredniczacy: string | null;
-  rodzajTransportu: string | null;
-  numerSrodkaTransportu: string | null;
+  transport: Transport[];
   umowy: { data: string | null; numer: string | null }[];
   zamowienia: { data: string | null; numer: string | null }[];
   nrPartiiTowaru: string[];
+}
+
+export interface Transport {
+  rodzajTransportu: string | null;
+  nrZleceniaTransportu: string | null;
 }
 
 export interface RozliczenieLineItem {
@@ -319,6 +323,7 @@ const parser = new XMLParser({
       "DaneFaKorygowanej",
       "StopkaFaktury",
       "Rejestry",
+      "Transport",
     ].some((n) => name.endsWith(n)),
   parseAttributeValue: true,
   parseTagValue: true,
@@ -651,13 +656,21 @@ function parseWarunkiTransakcji(fa: Record<string, unknown>): WarunkiTransakcji 
     .map((v: unknown) => String(v).trim())
     .filter((s) => s.length > 0);
 
+  const transport = toArray(findField(wt, "Transport"))
+    .filter(isRecord)
+    .map((t) => ({
+      rodzajTransportu:
+        findFieldString(t, "RodzajTransportu") ??
+        findFieldString(t, "TransportInny"),
+      nrZleceniaTransportu: findFieldString(t, "NrZleceniaTransportu"),
+    }));
+
   return {
     warunkiDostawy: findFieldString(wt, "WarunkiDostawy"),
     kursUmowny: findFieldString(wt, "KursUmowny"),
     walutaUmowna: findFieldString(wt, "WalutaUmowna"),
     podmiotPosredniczacy: findFieldString(wt, "PodmiotPosredniczacy"),
-    rodzajTransportu: findFieldString(wt, "RodzajTransportu"),
-    numerSrodkaTransportu: findFieldString(wt, "NumerSrodkaTransportu"),
+    transport,
     umowy,
     zamowienia,
     nrPartiiTowaru,
