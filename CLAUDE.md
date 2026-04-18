@@ -17,7 +17,9 @@ pnpm build         # tsc → dist/
 pnpm start         # node dist/index.js
 ```
 
-There is no test runner, linter, or formatter configured yet. When adding one, update this file.
+Tests use the built-in Node test runner with tsx loader: `pnpm test`.
+Tests live under `tests/` and follow `*.test.ts` naming. No linter or
+formatter is configured yet.
 
 ## What this service is
 

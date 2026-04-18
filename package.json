@@ -9,7 +9,9 @@
     "start:worker": "node --env-file=.env dist/jobs/worker.js",
     "db:generate": "node --env-file-if-exists=.env ./node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "tsx --env-file=.env src/db/migrate.ts",
-    "db:studio": "node --env-file=.env ./node_modules/drizzle-kit/bin.cjs studio"
+    "db:studio": "node --env-file=.env ./node_modules/drizzle-kit/bin.cjs studio",
+    "test": "node --import tsx --test 'tests/**/*.test.ts'",
+    "test:watch": "node --import tsx --test --watch 'tests/**/*.test.ts'"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.14",
