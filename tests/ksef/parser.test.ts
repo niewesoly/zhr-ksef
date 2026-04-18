@@ -243,3 +243,20 @@ suite("parseInvoiceFa3: daneFaKorygowanej", () => {
     assert.deepEqual(inv.daneFaKorygowanej, []);
   });
 });
+
+suite("parseInvoiceFa3: stopka", () => {
+  test("surfaces informacje lines and rejestry from extended fixture", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.stopka);
+    assert.equal(inv.stopka.informacje.length, 2);
+    assert.equal(inv.stopka.informacje[0], "Dziękujemy za współpracę.");
+    assert.equal(inv.stopka.rejestry.length, 1);
+    assert.equal(inv.stopka.rejestry[0].krs, "0000123456");
+    assert.equal(inv.stopka.rejestry[0].regon, "123456785");
+    assert.equal(inv.stopka.rejestry[0].bdo, "000123456");
+  });
+  test("returns null when Stopka element is absent", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3.xml"), "K");
+    assert.equal(inv.stopka, null);
+  });
+});

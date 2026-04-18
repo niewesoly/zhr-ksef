@@ -205,6 +205,11 @@ export interface Rozliczenie {
   odliczenia: RozliczenieLineItem[];
 }
 
+export interface Stopka {
+  informacje: string[];
+  rejestry: { krs: string | null; regon: string | null; bdo: string | null }[];
+}
+
 export interface InvoiceFa3 {
   ksefNumber: string;
   header: InvoiceHeader;
@@ -232,6 +237,7 @@ export interface InvoiceFa3 {
   adnotacje: Adnotacje | null;
   rozliczenie: Rozliczenie | null;
   warunkiTransakcji: WarunkiTransakcji | null;
+  stopka: Stopka | null;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -311,6 +317,8 @@ const parser = new XMLParser({
       "Zamowienia",
       "NrPartiiTowaru",
       "DaneFaKorygowanej",
+      "StopkaFaktury",
+      "Rejestry",
     ].some((n) => name.endsWith(n)),
   parseAttributeValue: true,
   parseTagValue: true,
@@ -680,6 +688,32 @@ function parseHeader(faktura: Record<string, unknown>): InvoiceHeader {
   };
 }
 
+function parseStopka(faktura: Record<string, unknown>): Stopka | null {
+  const stopka = findFieldRecord(faktura, "Stopka");
+  if (!stopka) return null;
+
+  const informacje: string[] = [];
+  const informacjeNode = findFieldRecord(stopka, "Informacje");
+  if (informacjeNode) {
+    const raw = findField(informacjeNode, "StopkaFaktury");
+    const arr = Array.isArray(raw) ? raw : raw != null ? [raw] : [];
+    for (const v of arr) {
+      const s = String(v).trim();
+      if (s) informacje.push(s);
+    }
+  }
+
+  const rejestry = toArray(findField(stopka, "Rejestry"))
+    .filter(isRecord)
+    .map((r) => ({
+      krs: findFieldString(r, "KRS"),
+      regon: findFieldString(r, "REGON"),
+      bdo: findFieldString(r, "BDO"),
+    }));
+
+  return { informacje, rejestry };
+}
+
 export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
   if (Buffer.byteLength(xml, "utf8") > MAX_INVOICE_XML_BYTES) {
     throw new Error(
@@ -748,5 +782,6 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     adnotacje: parseAdnotacje(fa),
     rozliczenie: parseRozliczenie(fa),
     warunkiTransakcji: parseWarunkiTransakcji(fa),
+    stopka: parseStopka(faktura),
   };
 }
