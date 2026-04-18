@@ -198,6 +198,13 @@ const STYLES = `
   }
 `;
 
+function fmtDate(d: string | null | undefined): string {
+  if (!d) return "—";
+  const parts = d.split("-");
+  if (parts.length !== 3) return d;
+  return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
 function fmtMoney(n: number | null, currency: string | null | undefined): string {
   if (n == null) return "—";
   return `${n.toFixed(2)} ${currency ?? ""}`.trim();
@@ -267,6 +274,33 @@ const Naglowek: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   );
 };
 
+const DaneFaKorygowanej: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  if (invoice.daneFaKorygowanej.length === 0) return null;
+  return (
+    <div class="ksef-section">
+      <h3 class="ksef-section__title">Dane faktury korygowanej</h3>
+      <table class="ksef-table">
+        <thead>
+          <tr>
+            <th>Numer faktury korygowanej</th>
+            <th>Data wystawienia</th>
+            <th>Numer KSeF</th>
+          </tr>
+        </thead>
+        <tbody>
+          {invoice.daneFaKorygowanej.map((r, i) => (
+            <tr key={String(i)}>
+              <td>{r.numer ?? "—"}</td>
+              <td>{fmtDate(r.dataWystawienia)}</td>
+              <td>{r.nrKsef ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 export function renderInvoiceHtml(invoice: InvoiceFa3): string {
   const element = <InvoiceHtml invoice={invoice} />;
   // hono/jsx elements stringify directly; `toString()` produces the
@@ -284,6 +318,8 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
       </head>
       <body>
         <Naglowek invoice={invoice} />
+
+        <DaneFaKorygowanej invoice={invoice} />
 
         <div class="grid" style="margin-top: 1rem;">
           <Party title="Sprzedawca" party={invoice.seller} />
@@ -371,22 +407,10 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
           </>
         ) : null}
 
-        {invoice.daneFaKorygowanej.length > 0 ? (
-          <>
-            <h2>Dane faktury korygowanej</h2>
-            {invoice.correctionReason ? (
-              <div class="card">
-                <div>Przyczyna: {invoice.correctionReason}</div>
-              </div>
-            ) : null}
-            {invoice.daneFaKorygowanej.map((d, i) => (
-              <div class="card" key={String(i)}>
-                {d.numer ? <div>Numer: {d.numer}</div> : null}
-                {d.dataWystawienia ? <div>Data: {d.dataWystawienia}</div> : null}
-                {d.nrKsef ? <div>Nr KSeF: {d.nrKsef}</div> : null}
-              </div>
-            ))}
-          </>
+        {invoice.correctionReason ? (
+          <div class="card">
+            <div>Przyczyna: {invoice.correctionReason}</div>
+          </div>
         ) : null}
       </body>
     </html>

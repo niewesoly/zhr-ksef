@@ -15,4 +15,17 @@ suite("html-renderer", () => {
     assert.match(html, /Faktura korygująca zbiorcza \(rabat\)/);
     assert.match(html, /ksef-naglowek__ksef/);
   });
+
+  test("daneFaKorygowanej renders table rows when array is populated", () => {
+    const html = renderInvoiceHtml(inv); // inv from extended fixture
+    assert.match(html, /ksef-section__title.*Dane faktury korygowanej|Dane faktury korygowanej.*ksef-section__title/);
+    assert.match(html, /Numer faktury korygowanej/);
+    assert.match(html, /ksef-table/);
+  });
+
+  test("daneFaKorygowanej renders nothing when array is empty", () => {
+    const invSimple = parseInvoiceFa3(loadFixture("sample_fa3.xml"), "K");
+    const html = renderInvoiceHtml(invSimple);
+    assert.doesNotMatch(html, /Dane faktury korygowanej/);
+  });
 });
