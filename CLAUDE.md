@@ -4,7 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current state
 
-This repo is a **fresh Hono scaffold** (single `src/index.ts` returning "Hello Hono!"). The target architecture is documented in the implementation plan at `~/.claude/plans/validated-sauteeing-raccoon.md` — **read that plan before making substantive changes**; it is the source of truth for model, modules, API surface, and security decisions.
+Visualization layer is **complete** (branch `viz/invoice-parity`, 53 tests passing). The HTML and PDF invoice renderers are fully ported from the ziher Rails monolith and wired into the invoices route.
+
+- `GET /invoices/:iid/html` — renders FA(3) invoice as a self-contained HTML document (CSP-safe, no external resources)
+- `GET /invoices/:iid/pdf` — renders FA(3) invoice as a PDF via `@react-pdf/renderer`
+
+The broader target architecture is documented in the implementation plan at `~/.claude/plans/validated-sauteeing-raccoon.md` — **read that plan before making substantive changes**; it is the source of truth for model, modules, API surface, and security decisions.
 
 ## Commands
 
@@ -82,5 +87,5 @@ Do not skip ahead — security foundations must land before crypto handling real
 ## TypeScript config notes
 
 - `"module": "NodeNext"` + `"type": "module"` → use explicit `.js` extensions in relative imports when needed by NodeNext resolution.
-- `"jsxImportSource": "hono/jsx"` is set, so JSX in this repo is Hono JSX (server-rendered), **not** React. The `@react-pdf/renderer` integration (when added) uses its own React runtime and should be scoped to the PDF module only.
+- `"jsxImportSource": "hono/jsx"` is set, so JSX in this repo is Hono JSX (server-rendered), **not** React. `src/visualization/html-renderer.tsx` uses Hono JSX — use `class=` not `className=`, no `import React`. `src/visualization/pdf-renderer.ts` uses React's `createElement` directly (no JSX) to avoid the Hono factory being applied.
 - `"verbatimModuleSyntax": true` — use `import type` for type-only imports.
