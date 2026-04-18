@@ -26,7 +26,7 @@ Font.register({
   ],
 });
 import type { InvoiceFa3 } from "../ksef/parser.js";
-import { fmtDate, fmtMoney, fmtQty } from "./format.js";
+import { fmtDate, fmtMoney, fmtQty, buildAdresLines } from "./format.js";
 import {
   rodzajFaktury,
   kraj,
@@ -37,6 +37,8 @@ import {
   formaPlatnosci,
   rodzajTransportu,
   gtu,
+  rolaPodmiotu3Short,
+  taxpayerStatus,
 } from "../ksef/dictionaries.js";
 
 // Server-side PDF rendering. Avoiding JSX in this file keeps the TS
@@ -201,31 +203,95 @@ function daneFaKorygowanej(invoice: InvoiceFa3): ReactElement | null {
 }
 
 // E5: Podmioty side-by-side
-function podmiotCard(title: string, p: InvoiceFa3["seller"] | null): ReactElement | null {
+function podmiotCard(
+  title: string,
+  p: InvoiceFa3["seller"] | null,
+  role: "seller" | "buyer" | "other" = "other",
+): ReactElement | null {
   if (!p) return null;
   const nipParts = [p.prefiksPodatnika, p.nip].filter((x): x is string => x !== null && x.trim() !== "");
-  const adresLines: string[] = [];
-  if (p.adres?.adresL1) adresLines.push(p.adres.adresL1);
-  if (p.adres?.adresL2) adresLines.push(p.adres.adresL2);
-  const krajLabel = kraj(p.adres?.kodKraju ?? null);
-  if (krajLabel) adresLines.push(krajLabel);
-  return h(
-    View,
-    { style: styles.partyCol },
+  const adresLines = buildAdresLines(p.adres, kraj);
+  const adresKorespLines = buildAdresLines(p.adresKoresp, kraj);
+
+  const children: (ReactElement | null)[] = [
     sectionTitle(title),
     nipParts.length > 0
       ? h(Text, { style: styles.cell }, `NIP: ${nipParts.join(" ")}`)
       : null,
+    p.nrEORI && p.nrEORI.trim() !== ""
+      ? h(Text, { style: styles.cell }, `EORI: ${p.nrEORI}`)
+      : null,
     p.nazwa ? h(Text, { style: [styles.cell, styles.partyName] }, p.nazwa) : null,
-    ...adresLines.map((l, i) => h(Text, { key: String(i), style: styles.cell }, l)),
-  );
+    ...adresLines.map((l, i) => h(Text, { key: `adr${i}`, style: styles.cell }, l)),
+  ];
+
+  // AdresKoresp
+  if (adresKorespLines.length > 0) {
+    children.push(h(Text, { style: [styles.cell, { fontWeight: "bold" as const }] }, "Adres koresp.:"));
+    adresKorespLines.forEach((l, i) => {
+      children.push(h(Text, { key: `koresp${i}`, style: styles.listItem }, l));
+    });
+  }
+
+  // daneKontaktowe
+  p.daneKontaktowe.forEach((entry, i) => {
+    const email = entry.email && entry.email.trim() !== "" ? entry.email : "";
+    const telefon = entry.telefon && entry.telefon.trim() !== "" ? entry.telefon : "";
+    if (!email && !telefon) return;
+    const text = email && telefon ? `${email} · ${telefon}` : email || telefon;
+    children.push(h(Text, { key: `contact${i}`, style: styles.cell }, text));
+  });
+
+  // Buyer-only fields
+  if (role === "buyer") {
+    if (p.nrKlienta && p.nrKlienta.trim() !== "") {
+      children.push(dlRow("Nr klienta:", p.nrKlienta));
+    }
+    if (p.idNabywcy && p.idNabywcy.trim() !== "") {
+      children.push(dlRow("ID nabywcy:", p.idNabywcy));
+    }
+    if (p.jst === true) {
+      children.push(h(Text, { style: styles.listItem }, "Jednostka samorządu terytorialnego"));
+    }
+    if (p.gv === true) {
+      children.push(h(Text, { style: styles.listItem }, "Grupa VAT"));
+    }
+  }
+
+  // Seller-only fields
+  if (role === "seller" && p.statusInfoPodatnika && p.statusInfoPodatnika.trim() !== "") {
+    const statusLabel = taxpayerStatus(p.statusInfoPodatnika);
+    if (statusLabel) {
+      children.push(dlRow("Status podatnika:", statusLabel));
+    }
+  }
+
+  // daneRejestrowe
+  if (p.daneRejestrowe) {
+    const dr = p.daneRejestrowe;
+    if (dr.nazwaPelna) {
+      children.push(h(Text, { style: [styles.cell, { fontSize: 7 }] }, dr.nazwaPelna));
+    }
+    const regParts: string[] = [];
+    if (dr.krs) regParts.push(`KRS: ${dr.krs}`);
+    if (dr.regon) regParts.push(`REGON: ${dr.regon}`);
+    if (regParts.length > 0) {
+      children.push(h(Text, { style: [styles.cell, { fontSize: 7 }] }, regParts.join(" · ")));
+    }
+  }
+
+  return h(View, { style: styles.partyCol }, ...children);
 }
 
 function podmioty(invoice: InvoiceFa3): ReactElement {
   const cols: (ReactElement | null)[] = [
-    podmiotCard("Sprzedawca", invoice.seller),
-    podmiotCard("Nabywca", invoice.buyer),
-    ...invoice.odbiorcy.map((o, i) => podmiotCard(`Odbiorca ${i + 1}`, o)),
+    podmiotCard("Sprzedawca", invoice.seller, "seller"),
+    podmiotCard("Nabywca", invoice.buyer, "buyer"),
+    ...invoice.odbiorcy.map((odb, i) => {
+      const roleLabel = rolaPodmiotu3Short(odb.rolaPodmiotu3) ?? "Odbiorca";
+      const title = `${roleLabel}${invoice.odbiorcy.length > 1 ? ` ${i + 1}` : ""}`;
+      return podmiotCard(title, odb, "other");
+    }),
   ];
   return h(View, { style: styles.partiesRow }, ...cols);
 }
