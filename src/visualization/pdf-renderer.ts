@@ -530,20 +530,20 @@ function warunkiTransakcji(invoice: InvoiceFa3): ReactElement | null {
       const parts: string[] = [];
       if (t.rodzajTransportu) parts.push(rodzajTransportu(t.rodzajTransportu));
       if (t.nrZleceniaTransportu) parts.push(`nr zlecenia: ${t.nrZleceniaTransportu}`);
-      rows.push(h(Text, { key: String(i), style: styles.listItem }, `• ${parts.join(" — ")}`));
+      rows.push(h(Text, { key: `t${i}`, style: styles.listItem }, `• ${parts.join(" — ")}`));
     });
   }
 
   const umowyItems = wt.umowy.map((u, i) => {
     const parts = [u.numer, u.data ? `(${fmtDate(u.data)})` : null].filter((p): p is string => p !== null);
-    return h(Text, { key: String(i), style: styles.listItem }, `• ${parts.join(" ")}`);
+    return h(Text, { key: `u${i}`, style: styles.listItem }, `• ${parts.join(" ")}`);
   });
   const zamowieniaItems = wt.zamowienia.map((z, i) => {
     const parts = [z.numer, z.data ? `(${fmtDate(z.data)})` : null].filter((p): p is string => p !== null);
-    return h(Text, { key: String(i), style: styles.listItem }, `• ${parts.join(" ")}`);
+    return h(Text, { key: `z${i}`, style: styles.listItem }, `• ${parts.join(" ")}`);
   });
   const partiiItems = wt.nrPartiiTowaru.map((nr, i) =>
-    h(Text, { key: String(i), style: styles.listItem }, `• ${nr}`),
+    h(Text, { key: `p${i}`, style: styles.listItem }, `• ${nr}`),
   );
 
   return h(
@@ -568,7 +568,7 @@ function stopka(invoice: InvoiceFa3): ReactElement | null {
   return h(
     View,
     { style: styles.stopka, wrap: false },
-    ...s.informacje.map((line, i) => h(Text, { key: String(i) }, line)),
+    ...s.informacje.map((line, i) => h(Text, { key: `i${i}` }, line)),
     ...s.rejestry.map((r, i) => {
       const parts: string[] = [];
       if (r.krs) parts.push(`KRS: ${r.krs}`);
