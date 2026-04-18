@@ -227,3 +227,19 @@ suite("parseInvoiceFa3: payment", () => {
     assert.equal(inv.payment.zaplataCzesciowa[0].formaPlatnosci, "6");
   });
 });
+
+suite("parseInvoiceFa3: daneFaKorygowanej", () => {
+  test("returns array of corrected invoice refs", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.equal(inv.daneFaKorygowanej.length, 2);
+    assert.equal(inv.daneFaKorygowanej[0].numer, "FA/2026/01/0010");
+    assert.equal(inv.daneFaKorygowanej[0].dataWystawienia, "2026-01-15");
+    assert.equal(inv.daneFaKorygowanej[0].nrKsef, "5265877635-20260115-AAAAAA-AA");
+    assert.equal(inv.daneFaKorygowanej[1].numer, "FA/2026/01/0011");
+  });
+
+  test("returns [] when no DaneFaKorygowanej elements", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3.xml"), "K");
+    assert.deepEqual(inv.daneFaKorygowanej, []);
+  });
+});

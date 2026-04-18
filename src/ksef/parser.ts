@@ -125,6 +125,12 @@ export interface Payment {
   zaplataCzesciowa: PartialPayment[];
 }
 
+export interface DaneFaKorygowanej {
+  numer: string | null;
+  dataWystawienia: string | null;
+  nrKsef: string | null;
+}
+
 export interface RegistryEntry {
   pelnaNazwa: string | null;
   krs: string | null;
@@ -219,8 +225,7 @@ export interface InvoiceFa3 {
   additionalInfo: AdditionalInfo[];
   payment: Payment | null;
   registries: RegistryEntry[];
-  correctedInvoiceNumber: string | null;
-  correctedInvoiceDate: string | null;
+  daneFaKorygowanej: DaneFaKorygowanej[];
   correctionReason: string | null;
   przyczynaKorekty: string | null;
   okresFaKorygowanej: string | null;
@@ -305,6 +310,7 @@ const parser = new XMLParser({
       "Umowy",
       "Zamowienia",
       "NrPartiiTowaru",
+      "DaneFaKorygowanej",
     ].some((n) => name.endsWith(n)),
   parseAttributeValue: true,
   parseTagValue: true,
@@ -503,6 +509,16 @@ function parseZaplataCzesciowa(platnosc: Record<string, unknown>): PartialPaymen
     }));
 }
 
+function parseDaneFaKorygowanej(fa: Record<string, unknown>): DaneFaKorygowanej[] {
+  return toArray(findField(fa, "DaneFaKorygowanej"))
+    .filter(isRecord)
+    .map((n) => ({
+      numer: findFieldString(n, "NrFaKorygowanej"),
+      dataWystawienia: findFieldString(n, "DataWystFaKorygowanej"),
+      nrKsef: findFieldString(n, "NrKSeFFaKorygowanej"),
+    }));
+}
+
 function parsePayment(platnosc: Record<string, unknown>): Payment {
   return {
     zaplacono: findFieldString(platnosc, "Zaplacono"),
@@ -686,9 +702,7 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
   const invoiceTypeLabel = (invoiceType ? (INVOICE_TYPE_LABEL[invoiceType] ?? invoiceType) : null) ?? "Faktura";
 
   // Correction data
-  const korekta = findFieldRecord(fa, "DaneFaKorygowanej");
-  const correctedInvoiceNumber = korekta ? findFieldString(korekta, "P_3A") : null;
-  const correctedInvoiceDate = korekta ? findFieldString(korekta, "P_3B") : null;
+  const daneFaKorygowanej = parseDaneFaKorygowanej(fa);
   const correctionReason = findFieldString(fa, "PrzyczynaKorekty");
   const okresFaKorygowanej = findFieldString(fa, "OkresFaKorygowanej");
 
@@ -727,8 +741,7 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     additionalInfo: parseAdditionalInfo(fa),
     payment: platnosc ? parsePayment(platnosc) : null,
     registries: parseRegistries(podmiot1),
-    correctedInvoiceNumber,
-    correctedInvoiceDate,
+    daneFaKorygowanej,
     correctionReason,
     przyczynaKorekty: correctionReason,
     okresFaKorygowanej,

@@ -170,18 +170,21 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
           </>
         ) : null}
 
-        {invoice.correctedInvoiceNumber ? (
+        {invoice.daneFaKorygowanej.length > 0 ? (
           <>
             <h2>Dane faktury korygowanej</h2>
-            <div class="card">
-              <div>Numer: {invoice.correctedInvoiceNumber}</div>
-              {invoice.correctedInvoiceDate ? (
-                <div>Data: {invoice.correctedInvoiceDate}</div>
-              ) : null}
-              {invoice.correctionReason ? (
+            {invoice.correctionReason ? (
+              <div class="card">
                 <div>Przyczyna: {invoice.correctionReason}</div>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
+            {invoice.daneFaKorygowanej.map((d, i) => (
+              <div class="card" key={String(i)}>
+                {d.numer ? <div>Numer: {d.numer}</div> : null}
+                {d.dataWystawienia ? <div>Data: {d.dataWystawienia}</div> : null}
+                {d.nrKsef ? <div>Nr KSeF: {d.nrKsef}</div> : null}
+              </div>
+            ))}
           </>
         ) : null}
       </body>
