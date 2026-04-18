@@ -9,6 +9,7 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import type { InvoiceFa3 } from "../ksef/parser.js";
+import { rodzajFaktury } from "../ksef/dictionaries.js";
 
 // Server-side PDF rendering. Avoiding JSX in this file keeps the TS
 // jsx config (`hono/jsx`) from pulling in Hono's JSX factory — React's
@@ -124,6 +125,38 @@ function sectionTitle(text: string): ReactElement {
   return h(Text, { style: styles.sectionTitle }, text);
 }
 
+function naglowek(invoice: InvoiceFa3): ReactElement {
+  const rodzajLabel = rodzajFaktury(invoice.invoiceType, invoice.okresFaKorygowanej);
+  return h(
+    View,
+    { style: styles.naglowekRow },
+    h(
+      View,
+      { style: { width: "50%" } },
+      h(
+        Text,
+        { style: styles.naglowekBrand },
+        "Krajowy System ",
+        h(Text, { style: styles.naglowekBrandE }, "e"),
+        "-Faktur",
+      ),
+    ),
+    h(
+      View,
+      { style: [styles.naglowekMeta, { width: "50%" }] },
+      h(Text, { style: styles.naglowekLabel }, "Numer faktury:"),
+      h(Text, { style: styles.naglowekNumber }, invoice.invoiceNumber ?? "—"),
+      h(Text, { style: styles.naglowekRodzaj }, rodzajLabel),
+      invoice.ksefNumber
+        ? h(Text, { style: styles.naglowekKsef }, `Numer KSeF: ${invoice.ksefNumber}`)
+        : null,
+      invoice.header.dataWytworzeniaFa
+        ? h(Text, { style: styles.naglowekKsef }, `Wytworzono: ${invoice.header.dataWytworzeniaFa}`)
+        : null,
+    ),
+  );
+}
+
 function party(title: string, p: InvoiceFa3["seller"] | null): ReactElement | null {
   if (!p) return null;
   const lines: string[] = [];
@@ -157,14 +190,7 @@ function lineItemRow(item: InvoiceFa3["lineItems"][number], currency: string): R
 function buildDocument(invoice: InvoiceFa3): ReactElement<DocumentProps> {
   const currency = invoice.currency;
 
-  const header = h(
-    View,
-    null,
-    h(Text, { style: styles.naglowekBrand }, invoice.invoiceTypeLabel),
-    h(Text, { style: styles.naglowekKsef }, `Numer: ${invoice.invoiceNumber ?? "—"}`),
-    h(Text, { style: styles.naglowekKsef }, `KSeF: ${invoice.ksefNumber}`),
-    h(Text, { style: styles.naglowekKsef }, `Data wystawienia: ${invoice.issueDate ?? "—"}`),
-  );
+  const header = naglowek(invoice);
 
   const parties = h(
     View,
