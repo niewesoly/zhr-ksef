@@ -12,3 +12,20 @@ suite("parseInvoiceFa3: header", () => {
     assert.equal(inv.header.wariantFormularza, "3");
   });
 });
+
+suite("parseInvoiceFa3: podmiot extended", () => {
+  test("sprzedawca surfaces prefiksPodatnika, nrEORI, daneKontaktowe, statusInfoPodatnika", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.equal(inv.seller.prefiksPodatnika, "PL");
+    assert.ok(inv.seller.daneKontaktowe.length >= 1);
+    assert.ok(inv.seller.daneRejestrowe);
+    assert.equal(inv.seller.statusInfoPodatnika, "1");
+  });
+  test("nabywca surfaces jst/gv booleans, nrKlienta, idNabywcy, adresKoresp", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.equal(inv.buyer.jst, true);
+    assert.equal(inv.buyer.gv, true);
+    assert.ok(inv.buyer.nrKlienta);
+    assert.ok(inv.buyer.adresKoresp);
+  });
+});

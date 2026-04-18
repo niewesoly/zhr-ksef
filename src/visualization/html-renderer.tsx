@@ -50,8 +50,12 @@ const Party: FC<{ title: string; party: InvoiceFa3["seller"] | null }> = ({ titl
       {party.nazwa ? <div><strong>{party.nazwa}</strong></div> : null}
       {party.nip ? <div>NIP: {party.nip}</div> : null}
       <Address addr={party.adres} />
-      {party.email ? <div class="muted">{party.email}</div> : null}
-      {party.telefon ? <div class="muted">{party.telefon}</div> : null}
+      {party.daneKontaktowe[0]?.email ? (
+        <div class="muted">{party.daneKontaktowe[0].email}</div>
+      ) : null}
+      {party.daneKontaktowe[0]?.telefon ? (
+        <div class="muted">{party.daneKontaktowe[0].telefon}</div>
+      ) : null}
     </div>
   );
 };

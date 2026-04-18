@@ -21,19 +21,39 @@ export interface PartyAddress {
   kodKraju: string | null; // country code, resolved to name e.g. "PL" → "Poland"
 }
 
-export interface InvoiceParty {
-  nip: string | null;
-  nazwa: string | null;
-  adres: PartyAddress | null;
-  telefon: string | null;
+export interface PartyContact {
   email: string | null;
-  // seller only (Podmiot1)
+  telefon: string | null;
+}
+
+export interface PartyRegistry {
+  nazwaPelna: string | null;
   krs: string | null;
   regon: string | null;
-  nazwaRejestrowa: string | null;
-  // buyer only (Podmiot2)
+}
+
+export interface InvoiceParty {
+  prefiksPodatnika: string | null;
+  nrEORI: string | null;
+  nip: string | null;
+  kodUE: string | null;
+  nrVatUE: string | null;
+  brakID: string | null;
+  nazwa: string | null; // Nazwa OR ImieNazwisko fallback
+  adres: PartyAddress | null;
+  adresKoresp: PartyAddress | null;
+  daneKontaktowe: PartyContact[]; // FA(3) allows multiple
+  daneRejestrowe: PartyRegistry | null;
+  // buyer-only
+  nrKlienta: string | null;
+  idNabywcy: string | null;
   jst: boolean;
   gv: boolean;
+  // seller-only
+  statusInfoPodatnika: string | null;
+  // Podmiot3-only
+  rolaPodmiotu3: string | null;
+  udzialPodmiotu3: string | null;
 }
 
 export interface InvoiceLineItem {
@@ -196,8 +216,11 @@ const parser = new XMLParser({
   processEntities: false,
 });
 
-function parseAddress(obj: Record<string, unknown>): PartyAddress | null {
-  const adres = findFieldRecord(obj, "Adres");
+function parseAddress(
+  obj: Record<string, unknown>,
+  fieldName = "Adres",
+): PartyAddress | null {
+  const adres = findFieldRecord(obj, fieldName);
   if (!adres) return null;
   const adresL1 = findFieldString(adres, "AdresL1");
   const adresL2 = findFieldString(adres, "AdresL2");
@@ -210,22 +233,52 @@ function parseAddress(obj: Record<string, unknown>): PartyAddress | null {
   };
 }
 
-function parseParty(podmiot: Record<string, unknown>, isBuyer = false): InvoiceParty {
+function parseRegistry(obj: Record<string, unknown>): PartyRegistry | null {
+  const rejestr = findFieldRecord(obj, "DaneRejestrowe");
+  if (!rejestr) return null;
+  const nazwaPelna = findFieldString(rejestr, "NazwaPelna");
+  const krs = findFieldString(rejestr, "KRS");
+  const regon = findFieldString(rejestr, "REGON");
+  if (!nazwaPelna && !krs && !regon) return null;
+  return { nazwaPelna, krs, regon };
+}
+
+function parseContacts(podmiot: Record<string, unknown>): PartyContact[] {
+  return toArray(findField(podmiot, "DaneKontaktowe")).map((row) => ({
+    email: findFieldString(row, "Email"),
+    telefon: findFieldString(row, "Telefon"),
+  }));
+}
+
+// The `role` parameter is a documentation/disambiguation aid. Fields are
+// read unconditionally across all Podmiot slots; absent XML yields null.
+type PartyRole = "sprzedawca" | "nabywca" | "podmiot3";
+
+function parseParty(podmiot: Record<string, unknown>, _role: PartyRole): InvoiceParty {
   const dane = findFieldRecord(podmiot, "DaneIdentyfikacyjne");
-  const kontakt = findFieldRecord(podmiot, "DaneKontaktowe");
-  const rejestr = findFieldRecord(podmiot, "DaneRejestrowe");
+  const nazwa = dane
+    ? (findFieldString(dane, "Nazwa") ?? findFieldString(dane, "ImieNazwisko"))
+    : null;
 
   return {
+    prefiksPodatnika: findFieldString(podmiot, "PrefiksPodatnika"),
+    nrEORI: findFieldString(podmiot, "NrEORI"),
     nip: dane ? findFieldString(dane, "NIP") : null,
-    nazwa: dane ? findFieldString(dane, "Nazwa") : null,
-    adres: parseAddress(podmiot),
-    telefon: kontakt ? findFieldString(kontakt, "Telefon") : null,
-    email: kontakt ? findFieldString(kontakt, "Email") : null,
-    krs: rejestr ? findFieldString(rejestr, "KRS") : null,
-    regon: rejestr ? findFieldString(rejestr, "REGON") : null,
-    nazwaRejestrowa: rejestr ? findFieldString(rejestr, "NazwaPelna") : null,
-    jst: isBuyer ? !!findField(podmiot, "JednostkaRzadowaSztucznie") : false,
-    gv: isBuyer ? !!findField(podmiot, "CzlonekGrupyVAT") : false,
+    kodUE: dane ? findFieldString(dane, "KodUE") : null,
+    nrVatUE: dane ? findFieldString(dane, "NrVatUE") : null,
+    brakID: dane ? findFieldString(dane, "BrakID") : null,
+    nazwa,
+    adres: parseAddress(podmiot, "Adres"),
+    adresKoresp: parseAddress(podmiot, "AdresKoresp"),
+    daneKontaktowe: parseContacts(podmiot),
+    daneRejestrowe: parseRegistry(podmiot),
+    nrKlienta: findFieldString(podmiot, "NrKlienta"),
+    idNabywcy: findFieldString(podmiot, "IDNabywcy"),
+    jst: findFieldString(podmiot, "JST") === "1",
+    gv: findFieldString(podmiot, "GV") === "1",
+    statusInfoPodatnika: findFieldString(podmiot, "StatusInfoPodatnika"),
+    rolaPodmiotu3: findFieldString(podmiot, "RolaPodmiotu3"),
+    udzialPodmiotu3: findFieldString(podmiot, "UdzialPodmiotu3"),
   };
 }
 
@@ -416,9 +469,9 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     issueDate: findFieldString(fa, "P_1"),
     currency: findFieldString(fa, "KodWaluty") ?? "PLN",
     placeOfIssue: findFieldString(fa, "MiejsceWystawienia"),
-    seller: parseParty(podmiot1),
-    buyer: parseParty(podmiot2, true),
-    receiver: podmiot3 ? parseParty(podmiot3) : null,
+    seller: parseParty(podmiot1, "sprzedawca"),
+    buyer: parseParty(podmiot2, "nabywca"),
+    receiver: podmiot3 ? parseParty(podmiot3, "podmiot3") : null,
     lineItems: parseLineItems(fa),
     totalGross: findFieldNumber(fa, "P_15"),
     taxSummary: parseTaxSummary(fa),
