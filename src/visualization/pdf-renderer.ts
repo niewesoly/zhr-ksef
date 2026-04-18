@@ -178,7 +178,7 @@ function daneFaKorygowanej(invoice: InvoiceFa3): ReactElement | null {
   return h(
     View,
     { style: styles.section },
-    sectionTitle("Faktura koryguje"),
+    sectionTitle("Dane faktury korygowanej"),
     h(
       View,
       { style: styles.table },
@@ -299,13 +299,14 @@ function podmioty(invoice: InvoiceFa3): ReactElement {
 // E6: Szczegoly DL
 function szczegoly(invoice: InvoiceFa3): ReactElement {
   const rows: ReactElement[] = [];
-  if (invoice.currency) rows.push(dlRow("Waluta:", invoice.currency, true));
-  if (invoice.invoiceType) rows.push(dlRow("Rodzaj faktury:", invoice.invoiceTypeLabel, true));
   if (invoice.issueDate) rows.push(dlRow("Data wystawienia:", fmtDate(invoice.issueDate), true));
-  const saleDateLabel = invoice.invoiceType === "ZAL" ? "Data zamówienia/umowy:" : "Data sprzedaży:";
-  if (invoice.saleDate) rows.push(dlRow(saleDateLabel, fmtDate(invoice.saleDate), true));
   if (invoice.placeOfIssue) rows.push(dlRow("Miejsce wystawienia:", invoice.placeOfIssue, true));
-  if (invoice.invoiceNumber) rows.push(dlRow("Numer faktury:", invoice.invoiceNumber, true));
+  if (invoice.okresFaKorygowanej) rows.push(dlRow("Okres, którego dotyczy rabat:", invoice.okresFaKorygowanej, true));
+  const saleDateLabel = invoice.invoiceType?.endsWith("ZAL") ?? false
+    ? "Data otrzymania zapłaty:"
+    : "Data dostawy / wykonania usługi:";
+  if (invoice.saleDate) rows.push(dlRow(saleDateLabel, fmtDate(invoice.saleDate), true));
+  if (invoice.currency) rows.push(dlRow("Kod waluty:", invoice.currency, true));
   return h(View, { style: styles.section }, sectionTitle("Szczegóły"), ...rows);
 }
 
@@ -365,7 +366,7 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
       ? h(
           View,
           { style: styles.totalRow },
-          h(Text, { style: styles.totalLabel }, "Łącznie:"),
+          h(Text, { style: styles.totalLabel }, "Kwota należności ogółem:"),
           h(Text, { style: styles.totalValue }, fmtMoney(invoice.totalGross, currency)),
         )
       : null,
@@ -380,23 +381,25 @@ function podsumowanieStawek(invoice: InvoiceFa3): ReactElement | null {
   return h(
     View,
     { style: styles.section },
-    sectionTitle("Podsumowanie stawek VAT"),
+    sectionTitle("Podsumowanie stawek podatku"),
     h(
       View,
       { style: styles.table },
       h(
         View,
         { style: styles.tableHeader },
-        h(Text, { style: [styles.cell, { width: "28%" }] }, "Stawka"),
-        h(Text, { style: [styles.cellNum, { width: "24%" }] }, "Netto"),
-        h(Text, { style: [styles.cellNum, { width: "24%" }] }, "VAT"),
-        h(Text, { style: [styles.cellNum, { width: "24%" }] }, "Brutto"),
+        h(Text, { style: [styles.cell, { width: "4%" }] }, "Lp."),
+        h(Text, { style: [styles.cell, { width: "24%" }] }, "Stawka podatku"),
+        h(Text, { style: [styles.cellNum, { width: "24%" }] }, "Kwota netto"),
+        h(Text, { style: [styles.cellNum, { width: "24%" }] }, "Kwota podatku"),
+        h(Text, { style: [styles.cellNum, { width: "24%" }] }, "Kwota brutto"),
       ),
       ...rows.map((r, i) =>
         h(
           View,
           { key: String(i), style: styles.tableRow },
-          h(Text, { style: [styles.cell, { width: "28%" }] }, r.label),
+          h(Text, { style: [styles.cell, { width: "4%" }] }, String(r.lp)),
+          h(Text, { style: [styles.cell, { width: "24%" }] }, r.label),
           h(Text, { style: [styles.cellNum, { width: "24%" }] }, fmtMoney(r.kwotaNetto, currency)),
           h(Text, { style: [styles.cellNum, { width: "24%" }] }, fmtMoney(r.kwotaPodatku, currency)),
           h(Text, { style: [styles.cellNum, { width: "24%" }] }, fmtMoney(r.kwotaBrutto, currency)),
