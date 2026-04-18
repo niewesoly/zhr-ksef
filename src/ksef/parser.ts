@@ -116,6 +116,40 @@ export interface InvoiceHeader {
   systemInfo: string | null;
 }
 
+export interface AdnotacjeZwolnienie {
+  p19: string | null;
+  p19a: string | null;
+  p19b: string | null;
+  p19c: string | null;
+  p19n: string | null;
+}
+
+export interface AdnotacjeNoweSrodki {
+  p22: string | null;
+  p42_5: string | null;
+  p22n: string | null;
+}
+
+export interface AdnotacjePMarzy {
+  pPMarzy: string | null;
+  pPMarzy_2: string | null;
+  pPMarzy_3_1: string | null;
+  pPMarzy_3_2: string | null;
+  pPMarzy_3_3: string | null;
+  pPMarzyN: string | null;
+}
+
+export interface Adnotacje {
+  p16: string | null;
+  p17: string | null;
+  p18: string | null;
+  p18a: string | null;
+  p23: string | null;
+  zwolnienie: AdnotacjeZwolnienie;
+  noweSrodkiTransportu: AdnotacjeNoweSrodki;
+  pmarzy: AdnotacjePMarzy;
+}
+
 export interface InvoiceFa3 {
   ksefNumber: string;
   header: InvoiceHeader;
@@ -142,6 +176,7 @@ export interface InvoiceFa3 {
   correctionReason: string | null;
   przyczynaKorekty: string | null;
   okresFaKorygowanej: string | null;
+  adnotacje: Adnotacje | null;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -405,6 +440,48 @@ function parseRegistries(podmiot1: Record<string, unknown>): RegistryEntry[] {
   return [{ pelnaNazwa, krs, regon }];
 }
 
+function parseAdnotacje(fa: Record<string, unknown>): Adnotacje | null {
+  const adnotacje = findFieldRecord(fa, "Adnotacje");
+  if (!adnotacje) return null;
+
+  const zwolnienieNode = findFieldRecord(adnotacje, "Zwolnienie");
+  const zwolnienie: AdnotacjeZwolnienie = {
+    p19: zwolnienieNode ? findFieldString(zwolnienieNode, "P_19") : null,
+    p19a: zwolnienieNode ? findFieldString(zwolnienieNode, "P_19A") : null,
+    p19b: zwolnienieNode ? findFieldString(zwolnienieNode, "P_19B") : null,
+    p19c: zwolnienieNode ? findFieldString(zwolnienieNode, "P_19C") : null,
+    p19n: zwolnienieNode ? findFieldString(zwolnienieNode, "P_19N") : null,
+  };
+
+  const noweNode = findFieldRecord(adnotacje, "NoweSrodkiTransportu");
+  const noweSrodkiTransportu: AdnotacjeNoweSrodki = {
+    p22: noweNode ? findFieldString(noweNode, "P_22") : null,
+    p42_5: noweNode ? findFieldString(noweNode, "P_42_5") : null,
+    p22n: noweNode ? findFieldString(noweNode, "P_22N") : null,
+  };
+
+  const pmarzyNode = findFieldRecord(adnotacje, "PMarzy");
+  const pmarzy: AdnotacjePMarzy = {
+    pPMarzy: pmarzyNode ? findFieldString(pmarzyNode, "P_PMarzy") : null,
+    pPMarzy_2: pmarzyNode ? findFieldString(pmarzyNode, "P_PMarzy_2") : null,
+    pPMarzy_3_1: pmarzyNode ? findFieldString(pmarzyNode, "P_PMarzy_3_1") : null,
+    pPMarzy_3_2: pmarzyNode ? findFieldString(pmarzyNode, "P_PMarzy_3_2") : null,
+    pPMarzy_3_3: pmarzyNode ? findFieldString(pmarzyNode, "P_PMarzy_3_3") : null,
+    pPMarzyN: pmarzyNode ? findFieldString(pmarzyNode, "P_PMarzyN") : null,
+  };
+
+  return {
+    p16: findFieldString(adnotacje, "P_16"),
+    p17: findFieldString(adnotacje, "P_17"),
+    p18: findFieldString(adnotacje, "P_18"),
+    p18a: findFieldString(adnotacje, "P_18A"),
+    p23: findFieldString(adnotacje, "P_23"),
+    zwolnienie,
+    noweSrodkiTransportu,
+    pmarzy,
+  };
+}
+
 function parseHeader(faktura: Record<string, unknown>): InvoiceHeader {
   const naglowek = findFieldRecord(faktura, "Naglowek");
   if (!naglowek) {
@@ -503,5 +580,6 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     correctionReason,
     przyczynaKorekty: correctionReason,
     okresFaKorygowanej,
+    adnotacje: parseAdnotacje(fa),
   };
 }

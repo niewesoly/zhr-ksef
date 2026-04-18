@@ -77,3 +77,13 @@ suite("parseInvoiceFa3: tax summary", () => {
     assert.equal(inv.taxSummary[0].label, "23% lub 22%");
   });
 });
+
+suite("parseInvoiceFa3: adnotacje", () => {
+  test("surfaces p16/p17/p18a + zwolnienie + pmarzy", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.adnotacje);
+    assert.equal(inv.adnotacje.p16, "1");
+    assert.equal(inv.adnotacje.zwolnienie.p19, "1");
+    assert.equal(inv.adnotacje.pmarzy.pPMarzy, "1");
+  });
+});
