@@ -535,13 +535,14 @@ export function adnotacjeFlags(adn: AdnotacjeInput | null): string[] {
   if (adn.p18a === "1") result.push("Mechanizm podzielonej płatności");
   if (adn.p23 === "1") result.push("Procedura trójstronna uproszczona");
 
-  if (adn.zwolnienie?.p19 === "1") {
+  const zwolnienie = adn.zwolnienie;
+  if (zwolnienie.p19 === "1") {
     result.push(
       "Dostawa / usługa zwolniona z VAT (art. 43 ust. 1, art. 113 ust. 1 i 9 albo inne przepisy)",
     );
   }
 
-  const nst = adn.noweSrodkiTransportu ?? {};
+  const nst = adn.noweSrodkiTransportu;
   switch (nst.p42_5) {
     case "1":
       result.push(
@@ -555,7 +556,7 @@ export function adnotacjeFlags(adn: AdnotacjeInput | null): string[] {
       break;
   }
 
-  const pm = adn.pmarzy ?? {};
+  const pm = adn.pmarzy;
   if (pm.pPMarzy === "1") {
     const suffixes: string[] = [];
     if (pm.pPMarzy_3_1 === "1") suffixes.push("towary używane");
