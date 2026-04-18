@@ -115,6 +115,6 @@ suite("html-renderer", () => {
     const html = renderInvoiceHtml(inv);
     assert.ok(html.startsWith("<!doctype html>"), "output must start with <!doctype html>");
     assert.match(html, /Content-Security-Policy/, "CSP meta tag must be present");
-    assert.match(html, /ksef-invoice/, "outer wrapper class must be present");
+    assert.match(html, /class="ksef-invoice"/, "outer wrapper element must be present");
   });
 });

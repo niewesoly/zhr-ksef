@@ -844,27 +844,29 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'" />
       </head>
       <body>
-        <Naglowek invoice={invoice} />
+        <div class="ksef-invoice">
+          <Naglowek invoice={invoice} />
 
-        <DaneFaKorygowanej invoice={invoice} />
+          <DaneFaKorygowanej invoice={invoice} />
 
-        <Podmioty invoice={invoice} />
+          <Podmioty invoice={invoice} />
 
-        <Szczegoly invoice={invoice} />
+          <Szczegoly invoice={invoice} />
 
-        <Wiersze invoice={invoice} />
+          <Wiersze invoice={invoice} />
 
-        <PodsumowanieStawek invoice={invoice} />
+          <PodsumowanieStawek invoice={invoice} />
 
-        <Adnotacje invoice={invoice} />
+          <Adnotacje invoice={invoice} />
 
-        <RozliczenieSection invoice={invoice} />
+          <RozliczenieSection invoice={invoice} />
 
-        <Platnosc invoice={invoice} />
+          <Platnosc invoice={invoice} />
 
-        <WarunkiTransakcjiSection invoice={invoice} />
+          <WarunkiTransakcjiSection invoice={invoice} />
 
-        <StopkaSection invoice={invoice} />
+          <StopkaSection invoice={invoice} />
+        </div>
       </body>
     </html>
   );
