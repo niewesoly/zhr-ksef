@@ -269,7 +269,7 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
         brutto
           ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość brutto")
           : h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość netto"),
-        h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość brutto"),
+        !brutto ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość brutto") : null,
         hasGtu ? h(Text, { style: [styles.cell, { width: "8%" }] }, "GTU") : null,
       ),
       ...invoice.lineItems.map((item, i) => {
@@ -292,7 +292,7 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
           brutto
             ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscBrutto ?? null, currency))
             : h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscNetto, currency)),
-          h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscBrutto ?? null, currency)),
+          !brutto ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscBrutto ?? null, currency)) : null,
           hasGtu ? h(Text, { style: [styles.cell, { width: "8%" }] }, item.gtu ? (gtu(item.gtu) ?? item.gtu) : "—") : null,
         );
       }),
