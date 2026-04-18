@@ -149,6 +149,8 @@
       <P_12>23</P_12>
       <GTIN>05901234123457</GTIN>
       <PKWiU>70.22.1</PKWiU>
+      <GTU>GTU_12</GTU>
+      <P_12_Zal_15>1</P_12_Zal_15>
     </FaWiersz>
     <FaWiersz>
       <NrWierszaFa>2</NrWierszaFa>

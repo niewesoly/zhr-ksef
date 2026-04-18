@@ -1,6 +1,6 @@
 import type { FC } from "hono/jsx";
 import type { InvoiceFa3, InvoiceParty, Adnotacje, Rozliczenie } from "../ksef/parser.js";
-import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags, zaplacono, znacznikZaplatyCzesciowej, formaPlatnosci, rodzajTransportu } from "../ksef/dictionaries.js";
+import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags, zaplacono, znacznikZaplatyCzesciowej, formaPlatnosci, rodzajTransportu, gtu } from "../ksef/dictionaries.js";
 import type { AdnotacjeInput } from "../ksef/dictionaries.js";
 
 // Renders a parsed FA(3) invoice to a fully self-contained HTML document.
@@ -438,6 +438,7 @@ const Wiersze: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   const { lineItems, bruttoMode, currency, totalGross } = invoice;
   if (lineItems.length === 0) return null;
   const priceLabel = bruttoMode ? "Cena brutto" : "Cena netto";
+  const hasGtu = lineItems.some((r) => r.gtu != null);
   return (
     <div class="ksef-section">
       <h3 class="ksef-section__title">Pozycje</h3>
@@ -455,6 +456,7 @@ const Wiersze: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
             <th class="num">Wartość netto</th>
             <th class="num">Wartość brutto</th>
             <th class="num">Stawka</th>
+            {hasGtu ? <th>GTU</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -463,16 +465,22 @@ const Wiersze: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
               ? (row.cenaJednBrutto ?? row.cenaJednNetto)
               : (row.cenaJednNetto ?? row.cenaJednBrutto);
             const stawkaLabel = stawkaPodatku(row.stawkaPodatku) || row.stawkaPodatku || "—";
+            const gtuLabel = row.gtu ? (gtu(row.gtu) ?? row.gtu) : null;
             return (
               <tr key={String(i)}>
                 <td class="num">{row.lp ?? String(i + 1)}</td>
-                <td>{row.nazwa ?? "—"}</td>
+                <td>
+                  {row.nazwa ?? "—"}
+                  {row.p12Zal15 ? <span class="ksef-badge">zał. 15</span> : null}
+                  {row.stanPrzed ? <span class="ksef-badge">stan przed</span> : null}
+                </td>
                 <td class="num">{fmtQty(row.ilosc)}</td>
                 <td>{row.miara ?? "—"}</td>
                 <td class="num">{fmtMoney(cena, currency)}</td>
                 <td class="num">{fmtMoney(row.wartoscNetto, currency)}</td>
                 <td class="num">{fmtMoney(row.wartoscBrutto, currency)}</td>
                 <td class="num">{stawkaLabel}</td>
+                {hasGtu ? <td>{gtuLabel ?? "—"}</td> : null}
               </tr>
             );
           })}

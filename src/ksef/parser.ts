@@ -71,6 +71,9 @@ export interface InvoiceLineItem {
   gtin: string | null;
   pkwiU: string | null;
   cn: string | null;
+  gtu: string | null;
+  p12Zal15: boolean;
+  stanPrzed: boolean;
 }
 
 export interface TaxSummaryRow {
@@ -425,6 +428,9 @@ function parseLineItems(fa: Record<string, unknown>): InvoiceLineItem[] {
       gtin: findFieldString(row, "GTIN"),
       pkwiU: findFieldString(row, "PKWiU"),
       cn: findFieldString(row, "CN"),
+      gtu: findFieldString(row, "GTU"),
+      p12Zal15: findFieldString(row, "P_12_Zal_15") === "1",
+      stanPrzed: findFieldString(row, "StanPrzed") === "1",
     } satisfies InvoiceLineItem;
   }).filter((x): x is InvoiceLineItem => x !== null);
 }

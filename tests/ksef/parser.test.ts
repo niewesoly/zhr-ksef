@@ -57,6 +57,17 @@ suite("parseInvoiceFa3: wiersze", () => {
     assert.ok("gtin" in row);
   });
 
+  test("surfaces gtu, p12Zal15, stanPrzed from extended fixture", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    const row0 = inv.lineItems[0];
+    assert.equal(row0.gtu, "GTU_12");
+    assert.equal(row0.p12Zal15, true);
+    assert.equal(row0.stanPrzed, false);
+    const row1 = inv.lineItems[1];
+    assert.equal(row1.gtu, null);
+    assert.equal(row1.p12Zal15, false);
+  });
+
   test("bruttoMode is true iff all rows lack netto price+value", () => {
     const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
     // extended fixture mixes — so bruttoMode=false. Assert shape only.

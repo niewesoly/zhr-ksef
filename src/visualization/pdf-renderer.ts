@@ -18,6 +18,7 @@ import {
   znacznikZaplatyCzesciowej,
   formaPlatnosci,
   rodzajTransportu,
+  gtu,
 } from "../ksef/dictionaries.js";
 import type { AdnotacjeInput } from "../ksef/dictionaries.js";
 
@@ -245,6 +246,8 @@ function szczegoly(invoice: InvoiceFa3): ReactElement {
 function wiersze(invoice: InvoiceFa3): ReactElement {
   const currency = invoice.currency;
   const brutto = invoice.bruttoMode;
+  const hasGtu = invoice.lineItems.some((r) => r.gtu != null);
+  const nazwaSz = hasGtu ? "28%" : "36%";
   return h(
     View,
     { style: styles.section },
@@ -256,7 +259,7 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
         View,
         { style: styles.tableHeader },
         h(Text, { style: [styles.cell, { width: "4%" }] }, "Lp."),
-        h(Text, { style: [styles.cell, { width: "36%" }] }, "Nazwa"),
+        h(Text, { style: [styles.cell, { width: nazwaSz }] }, "Nazwa"),
         h(Text, { style: [styles.cellNum, { width: "8%" }] }, "Ilość"),
         h(Text, { style: [styles.cell, { width: "7%" }] }, "Miara"),
         brutto
@@ -267,13 +270,19 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
           ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość brutto")
           : h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość netto"),
         h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość brutto"),
+        hasGtu ? h(Text, { style: [styles.cell, { width: "8%" }] }, "GTU") : null,
       ),
-      ...invoice.lineItems.map((item, i) =>
-        h(
+      ...invoice.lineItems.map((item, i) => {
+        const nazwaText = [
+          item.nazwa ?? "—",
+          item.p12Zal15 ? "[zał. 15]" : null,
+          item.stanPrzed ? "[stan przed]" : null,
+        ].filter(Boolean).join(" ");
+        return h(
           View,
           { key: String(i), style: styles.tableRow },
           h(Text, { style: [styles.cell, { width: "4%" }] }, String(item.lp)),
-          h(Text, { style: [styles.cell, { width: "36%" }] }, item.nazwa ?? "—"),
+          h(Text, { style: [styles.cell, { width: nazwaSz }] }, nazwaText),
           h(Text, { style: [styles.cellNum, { width: "8%" }] }, fmtQty(item.ilosc)),
           h(Text, { style: [styles.cell, { width: "7%" }] }, item.miara ?? "—"),
           brutto
@@ -284,8 +293,9 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
             ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscBrutto ?? null, currency))
             : h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscNetto, currency)),
           h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscBrutto ?? null, currency)),
-        ),
-      ),
+          hasGtu ? h(Text, { style: [styles.cell, { width: "8%" }] }, item.gtu ? (gtu(item.gtu) ?? item.gtu) : "—") : null,
+        );
+      }),
     ),
     invoice.totalGross != null
       ? h(

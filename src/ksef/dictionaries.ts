@@ -397,6 +397,22 @@ export const KRAJ: Readonly<Record<string, string>> = Object.freeze({
   XI: "Zjednoczone Królestwo (Irlandia Północna)",
 });
 
+export const GTU: Readonly<Record<string, string>> = Object.freeze({
+  GTU_01: "Alkohol etylowy i inne napoje alkoholowe",
+  GTU_02: "Benzyna lotnicza, nafta lotnicza i inne paliwa lotnicze",
+  GTU_03: "Olej napędowy, benzyna silnikowa i inne paliwa silnikowe",
+  GTU_04: "Wyroby tytoniowe i susz tytoniowy",
+  GTU_05: "Odpady, złom i surowce wtórne",
+  GTU_06: "Urządzenia elektroniczne oraz części i materiały do nich",
+  GTU_07: "Pojazdy oraz części samochodowe",
+  GTU_08: "Metale szlachetne oraz nieszlachetne",
+  GTU_09: "Leki oraz wyroby medyczne",
+  GTU_10: "Budynki, budowle i grunty",
+  GTU_11: "Usługi w zakresie przenoszenia uprawnień do emisji",
+  GTU_12: "Usługi o charakterze niematerialnym",
+  GTU_13: "Usługi transportowe i gospodarki magazynowej",
+});
+
 // ---------- Resolver helpers ----------
 
 // Matches Ruby's `blank?` for string|null inputs: nil OR empty OR
@@ -495,6 +511,12 @@ export function procedura(code: string | null): string | null {
 export function typLadunku(code: string | null): string {
   const key = asKey(code);
   return TYP_LADUNKU[key] ?? key;
+}
+
+export function gtu(code: string | null): string | null {
+  if (isBlank(code)) return null;
+  const key = asKey(code).toUpperCase();
+  return GTU[key] ?? asKey(code);
 }
 
 export function kraj(code: string | null): string | null {
