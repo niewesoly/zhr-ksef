@@ -158,6 +158,11 @@ suite("parseInvoiceFa3: warunkiTransakcji", () => {
     assert.equal(inv.warunkiTransakcji.zamowienia[0].data, "2026-03-20");
     assert.deepEqual(inv.warunkiTransakcji.nrPartiiTowaru, ["PARTIA-A-001", "PARTIA-B-002"]);
   });
+
+  test("returns null when WarunkiTransakcji element is absent", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3.xml"), "K");
+    assert.equal(inv.warunkiTransakcji, null);
+  });
 });
 
 suite("parseInvoiceFa3: payment", () => {
