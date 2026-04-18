@@ -43,4 +43,13 @@ suite("html-renderer", () => {
     assert.match(html, /Sprzedawca/);
     assert.match(html, /Nabywca/);
   });
+
+  // D6: Szczegoly details list
+  test("szczegoly renders Data wystawienia, Miejsce wystawienia, Kod waluty", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /Szczegóły/);
+    assert.match(html, /Data wystawienia/);
+    assert.match(html, /ksef-dl/);
+    assert.match(html, /Kod waluty/);
+  });
 });

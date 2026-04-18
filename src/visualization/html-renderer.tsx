@@ -390,6 +390,49 @@ const DaneFaKorygowanej: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   );
 };
 
+const Szczegoly: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  const saleDateLabel = invoice.invoiceType?.endsWith("ZAL")
+    ? "Data otrzymania zapłaty"
+    : "Data dostawy / wykonania usługi";
+  return (
+    <div class="ksef-section">
+      <h3 class="ksef-section__title">Szczegóły</h3>
+      <dl class="ksef-dl ksef-dl--two-col">
+        {invoice.issueDate ? (
+          <>
+            <dt>Data wystawienia</dt>
+            <dd>{fmtDate(invoice.issueDate)}</dd>
+          </>
+        ) : null}
+        {invoice.placeOfIssue ? (
+          <>
+            <dt>Miejsce wystawienia</dt>
+            <dd>{invoice.placeOfIssue}</dd>
+          </>
+        ) : null}
+        {invoice.okresFaKorygowanej ? (
+          <>
+            <dt>Okres, którego dotyczy rabat</dt>
+            <dd>{invoice.okresFaKorygowanej}</dd>
+          </>
+        ) : null}
+        {invoice.saleDate ? (
+          <>
+            <dt>{saleDateLabel}</dt>
+            <dd>{fmtDate(invoice.saleDate)}</dd>
+          </>
+        ) : null}
+        {invoice.currency ? (
+          <>
+            <dt>Kod waluty</dt>
+            <dd>{invoice.currency}</dd>
+          </>
+        ) : null}
+      </dl>
+    </div>
+  );
+};
+
 export function renderInvoiceHtml(invoice: InvoiceFa3): string {
   const element = <InvoiceHtml invoice={invoice} />;
   // hono/jsx elements stringify directly; `toString()` produces the
@@ -411,6 +454,8 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
         <DaneFaKorygowanej invoice={invoice} />
 
         <Podmioty invoice={invoice} />
+
+        <Szczegoly invoice={invoice} />
 
         <h2>Pozycje</h2>
         <table>
