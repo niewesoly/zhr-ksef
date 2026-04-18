@@ -1,13 +1,30 @@
 import { createElement as h, type ReactElement } from "react";
+import { fileURLToPath } from "node:url";
+import { join, dirname } from "node:path";
 import {
   Document,
   type DocumentProps,
+  Font,
   Page,
   Text,
   View,
   StyleSheet,
   renderToBuffer,
 } from "@react-pdf/renderer";
+
+// Fonts are bundled under src/assets/fonts/ and deployed with the app.
+// Built-in Helvetica covers Latin-1 only — Polish diacritics (ą ć ę ł ń ó ś ź ż)
+// need Latin-Extended-A/B which Liberation Sans provides.
+const fontsDir = join(dirname(fileURLToPath(import.meta.url)), "../assets/fonts");
+Font.register({
+  family: "LiberationSans",
+  fonts: [
+    { src: join(fontsDir, "LiberationSans-Regular.ttf") },
+    { src: join(fontsDir, "LiberationSans-Bold.ttf"), fontWeight: "bold" },
+    { src: join(fontsDir, "LiberationSans-Italic.ttf"), fontStyle: "italic" },
+    { src: join(fontsDir, "LiberationSans-BoldItalic.ttf"), fontWeight: "bold", fontStyle: "italic" },
+  ],
+});
 import type { InvoiceFa3 } from "../ksef/parser.js";
 import {
   rodzajFaktury,
@@ -30,7 +47,7 @@ const styles = StyleSheet.create({
   page: {
     padding: 28,
     fontSize: 8,
-    fontFamily: "Helvetica",
+    fontFamily: "LiberationSans",
     color: "#111",
     lineHeight: 1.35,
   },
@@ -44,15 +61,16 @@ const styles = StyleSheet.create({
     borderLeftWidth: 2,
     borderLeftColor: "#555",
     borderStyle: "solid",
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "LiberationSans",
+    fontWeight: "bold",
   },
   // Definition list row (two columns: label + value)
   dlRow: { flexDirection: "row", marginBottom: 1 },
-  dlLabel: { width: "42%", fontFamily: "Helvetica-Bold", color: "#444", paddingRight: 3 },
+  dlLabel: { width: "42%", fontFamily: "LiberationSans", fontWeight: "bold", color: "#444", paddingRight: 3 },
   dlValue: { width: "58%" },
   // Two-column DL variant
   dlRowTwo: { flexDirection: "row", marginBottom: 1 },
-  dlLabelTwo: { width: "48%", fontFamily: "Helvetica-Bold", color: "#444", paddingRight: 3 },
+  dlLabelTwo: { width: "48%", fontFamily: "LiberationSans", fontWeight: "bold", color: "#444", paddingRight: 3 },
   dlValueTwo: { width: "52%" },
   // Table shared
   table: { width: "100%", marginTop: 3 },
@@ -75,29 +93,29 @@ const styles = StyleSheet.create({
   section: { marginBottom: 6 },
   // Naglowek
   naglowekRow: { flexDirection: "row", marginBottom: 8, borderBottomWidth: 1, borderBottomColor: "#111", borderStyle: "solid", paddingBottom: 4 },
-  naglowekBrand: { fontSize: 14, fontFamily: "Helvetica-Bold", flexGrow: 1 },
+  naglowekBrand: { fontSize: 14, fontFamily: "LiberationSans", fontWeight: "bold", flexGrow: 1 },
   naglowekBrandE: { color: "#b71c1c" },
   naglowekMeta: { textAlign: "right" },
   naglowekLabel: { fontSize: 7, color: "#555", textTransform: "uppercase" },
-  naglowekNumber: { fontSize: 11, fontFamily: "Helvetica-Bold" },
+  naglowekNumber: { fontSize: 11, fontFamily: "LiberationSans", fontWeight: "bold" },
   naglowekRodzaj: { fontSize: 9, fontStyle: "italic" },
   naglowekKsef: { fontSize: 7, color: "#555" },
   // Party columns
   partiesRow: { flexDirection: "row", marginBottom: 6 },
   partyCol: { flexGrow: 1, flexBasis: 0, borderWidth: 0.75, borderColor: "#bbb", borderStyle: "solid", padding: 5, marginRight: 4 },
-  partyLabel: { fontFamily: "Helvetica-Bold", color: "#444" },
-  partyName: { fontFamily: "Helvetica-Bold", marginTop: 1 },
+  partyLabel: { fontFamily: "LiberationSans", fontWeight: "bold", color: "#444" },
+  partyName: { fontFamily: "LiberationSans", fontWeight: "bold", marginTop: 1 },
   // List (ksef-list equivalent)
   listItem: { marginBottom: 1, paddingLeft: 8 },
   // Bank account box
   bankBox: { borderWidth: 0.75, borderColor: "#bbb", borderStyle: "solid", padding: 4, marginTop: 3 },
-  bankTitle: { fontFamily: "Helvetica-Bold", marginBottom: 2 },
+  bankTitle: { fontFamily: "LiberationSans", fontWeight: "bold", marginBottom: 2 },
   // Footer / Stopka
   stopka: { marginTop: 10, fontSize: 7, color: "#444", borderTopWidth: 0.75, borderTopColor: "#bbb", borderStyle: "solid", paddingTop: 3 },
   // Total line
   totalRow: { flexDirection: "row", marginTop: 3 },
-  totalLabel: { fontFamily: "Helvetica-Bold", flexGrow: 1, textAlign: "right", paddingRight: 6 },
-  totalValue: { fontFamily: "Helvetica-Bold", width: 80, textAlign: "right" },
+  totalLabel: { fontFamily: "LiberationSans", fontWeight: "bold", flexGrow: 1, textAlign: "right", paddingRight: 6 },
+  totalValue: { fontFamily: "LiberationSans", fontWeight: "bold", width: 80, textAlign: "right" },
 });
 
 function fmtDate(d: string | null | undefined): string {
@@ -247,7 +265,12 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
   const currency = invoice.currency;
   const brutto = invoice.bruttoMode;
   const hasGtu = invoice.lineItems.some((r) => r.gtu != null);
-  const nazwaSz = hasGtu ? "28%" : "36%";
+  // Column widths must always sum to 100%.
+  // netto mode: Lp(4) + Nazwa(28/36) + Ilość(8) + Miara(7) + Cena(13) + Stawka(8) + Netto(12) + Brutto(12) [+ GTU(8)] = 100%
+  // brutto mode: same columns but no second-value column → absorb its 12% into Nazwa
+  const nazwaSz = hasGtu
+    ? (brutto ? "40%" : "28%")
+    : (brutto ? "48%" : "36%");
   return h(
     View,
     { style: styles.section },
