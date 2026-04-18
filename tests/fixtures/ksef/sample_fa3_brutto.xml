@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  brutto-mode fixture — all rows netto-less (no P_9A / no P_11).
+  Each FaWiersz has only P_9B (cena brutto) + P_11A (wartosc brutto).
+  Derived from sample_fa3_full.xml, trimmed to the minimum the parser
+  needs to succeed. No DTDs / entities (processEntities: false).
+-->
+<Faktura xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="FA (3)" wersjaSchemy="1-0E">FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+    <DataWytworzeniaFa>2026-04-18T09:00:00Z</DataWytworzeniaFa>
+    <SystemInfo>zhr-ksef brutto-mode fixture</SystemInfo>
+  </Naglowek>
+  <Podmiot1>
+    <DaneIdentyfikacyjne>
+      <NIP>5265877635</NIP>
+      <Nazwa>Sprzedawca Brutto Sp. z o.o.</Nazwa>
+    </DaneIdentyfikacyjne>
+    <Adres>
+      <KodKraju>PL</KodKraju>
+      <AdresL1>ul. Testowa 1</AdresL1>
+      <AdresL2>00-001 Warszawa</AdresL2>
+    </Adres>
+  </Podmiot1>
+  <Podmiot2>
+    <DaneIdentyfikacyjne>
+      <NIP>6808208874</NIP>
+      <Nazwa>Nabywca Brutto</Nazwa>
+    </DaneIdentyfikacyjne>
+    <Adres>
+      <KodKraju>PL</KodKraju>
+      <AdresL1>ul. Nabywcza 2</AdresL1>
+      <AdresL2>00-002 Warszawa</AdresL2>
+    </Adres>
+  </Podmiot2>
+  <Fa>
+    <KodWaluty>PLN</KodWaluty>
+    <P_1>2026-04-18</P_1>
+    <P_2>FA/BRUTTO/2026/04/0001</P_2>
+    <P_6>2026-04-18</P_6>
+    <RodzajFaktury>VAT</RodzajFaktury>
+    <P_15>49.20</P_15>
+    <FaWiersz>
+      <NrWierszaFa>1</NrWierszaFa>
+      <P_7>Gadżet brutto 1</P_7>
+      <P_8A>szt.</P_8A>
+      <P_8B>1</P_8B>
+      <P_9B>24.60</P_9B>
+      <P_11A>24.60</P_11A>
+      <P_12>23</P_12>
+    </FaWiersz>
+    <FaWiersz>
+      <NrWierszaFa>2</NrWierszaFa>
+      <P_7>Gadżet brutto 2</P_7>
+      <P_8A>szt.</P_8A>
+      <P_8B>1</P_8B>
+      <P_9B>24.60</P_9B>
+      <P_11A>24.60</P_11A>
+      <P_12>23</P_12>
+    </FaWiersz>
+  </Fa>
+</Faktura>

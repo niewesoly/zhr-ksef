@@ -61,11 +61,16 @@ export interface InvoiceLineItem {
   uuid: string | null;
   nazwa: string | null;
   cenaJednNetto: number | null;
+  cenaJednBrutto: number | null;
   ilosc: number | null;
   miara: string | null;
   rabat: number | null;
   stawkaPodatku: string | null;
   wartoscNetto: number | null;
+  wartoscBrutto: number | null;
+  gtin: string | null;
+  pkwiU: string | null;
+  cn: string | null;
 }
 
 export interface TaxSummaryRow {
@@ -125,6 +130,7 @@ export interface InvoiceFa3 {
   buyer: InvoiceParty;
   odbiorcy: InvoiceParty[];
   lineItems: InvoiceLineItem[];
+  bruttoMode: boolean;
   totalGross: number | null;
   taxSummary: TaxSummaryRow[];
   additionalInfo: AdditionalInfo[];
@@ -295,11 +301,16 @@ function parseLineItems(fa: Record<string, unknown>): InvoiceLineItem[] {
       uuid: findFieldString(row, "NrWierszaFa"),
       nazwa: findFieldString(row, "P_7"),
       cenaJednNetto: findFieldNumber(row, "P_9A"),
+      cenaJednBrutto: findFieldNumber(row, "P_9B"),
       ilosc: findFieldNumber(row, "P_8B"),
       miara: findFieldString(row, "P_8A"),
       rabat: findFieldNumber(row, "P_10"),
       stawkaPodatku: findFieldString(row, "P_12"),
       wartoscNetto: findFieldNumber(row, "P_11"),
+      wartoscBrutto: findFieldNumber(row, "P_11A"),
+      gtin: findFieldString(row, "GTIN"),
+      pkwiU: findFieldString(row, "PKWiU"),
+      cn: findFieldString(row, "CN"),
     } satisfies InvoiceLineItem;
   }).filter((x): x is InvoiceLineItem => x !== null);
 }
@@ -463,6 +474,11 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
       ? platnosci
       : null;
 
+  const lineItems = parseLineItems(fa);
+  const bruttoMode =
+    lineItems.length > 0 &&
+    lineItems.every((r) => r.cenaJednNetto == null && r.wartoscNetto == null);
+
   return {
     ksefNumber,
     header: parseHeader(faktura),
@@ -478,7 +494,8 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     odbiorcy: toArray(findField(faktura, "Podmiot3"))
       .filter(isRecord)
       .map((p) => parseParty(p, "podmiot3")),
-    lineItems: parseLineItems(fa),
+    lineItems,
+    bruttoMode,
     totalGross: findFieldNumber(fa, "P_15"),
     taxSummary: parseTaxSummary(fa),
     additionalInfo: parseAdditionalInfo(fa),

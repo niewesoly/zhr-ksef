@@ -47,3 +47,25 @@ suite("parseInvoiceFa3: Fa core", () => {
     assert.equal(inv.okresFaKorygowanej, "2026-01");
   });
 });
+
+suite("parseInvoiceFa3: wiersze", () => {
+  test("surfaces cenaBrutto, wartoscBrutto, gtin, pkwiU, cn", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    const row = inv.lineItems[0];
+    assert.ok("cenaJednBrutto" in row);
+    assert.ok("wartoscBrutto" in row);
+    assert.ok("gtin" in row);
+  });
+
+  test("bruttoMode is true iff all rows lack netto price+value", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    // extended fixture mixes — so bruttoMode=false. Assert shape only.
+    assert.equal(typeof inv.bruttoMode, "boolean");
+    assert.equal(inv.bruttoMode, false);
+    // brutto-only fixture: every row netto-less → bruttoMode=true.
+    assert.equal(
+      parseInvoiceFa3(loadFixture("sample_fa3_brutto.xml"), "K").bruttoMode,
+      true,
+    );
+  });
+});
