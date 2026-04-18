@@ -390,8 +390,13 @@ function parseParty(podmiot: Record<string, unknown>, _role: PartyRole): Invoice
     jst: findFieldString(podmiot, "JST") === "1",
     gv: findFieldString(podmiot, "GV") === "1",
     statusInfoPodatnika: findFieldString(podmiot, "StatusInfoPodatnika"),
-    rolaPodmiotu3: findFieldString(podmiot, "RolaPodmiotu3"),
-    udzialPodmiotu3: findFieldString(podmiot, "UdzialPodmiotu3"),
+    rolaPodmiotu3:
+      findFieldString(podmiot, "Rola") ??
+      findFieldString(podmiot, "RolaInna") ??
+      findFieldString(podmiot, "RolaPodmiotu3"),
+    udzialPodmiotu3:
+      findFieldString(podmiot, "Udzial") ??
+      findFieldString(podmiot, "UdzialPodmiotu3"),
   };
 }
 

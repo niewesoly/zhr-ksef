@@ -85,8 +85,8 @@
       <AdresL1>ul. Bankowa 7</AdresL1>
       <AdresL2>00-100 Warszawa</AdresL2>
     </Adres>
-    <RolaPodmiotu3>1</RolaPodmiotu3>
-    <UdzialPodmiotu3>100</UdzialPodmiotu3>
+    <Rola>1</Rola>
+    <Udzial>100</Udzial>
   </Podmiot3>
   <Podmiot3>
     <DaneIdentyfikacyjne>
@@ -98,7 +98,7 @@
       <AdresL1>ul. Magazynowa 12</AdresL1>
       <AdresL2>02-200 Warszawa</AdresL2>
     </Adres>
-    <RolaPodmiotu3>2</RolaPodmiotu3>
+    <Rola>2</Rola>
   </Podmiot3>
 
   <Fa>
