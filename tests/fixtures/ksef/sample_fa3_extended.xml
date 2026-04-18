@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  synthetic fixture — covers optional sections, not XSD-validated.
+  Purpose: exercise every optional FA(3) element the renderer must handle
+  that the vendor fixtures (sample_fa3.xml / sample_fa3_full.xml) omit.
+  Namespace matches sample_fa3_full.xml (FA(3) schema of 2025/06/25).
+  Keep under 300 lines. Do not add DTDs or entities (parser runs with
+  processEntities: false for XXE hardening).
+-->
+<Faktura xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">
+  <!-- Naglowek: full header so parser sees kodSystemowy + wersjaSchemy
+       attributes and a non-empty SystemInfo. -->
+  <Naglowek>
+    <KodFormularza kodSystemowy="FA (3)" wersjaSchemy="1-0E">FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+    <DataWytworzeniaFa>2026-04-15T08:30:00Z</DataWytworzeniaFa>
+    <SystemInfo>zhr-ksef synthetic extended fixture</SystemInfo>
+  </Naglowek>
+
+  <!-- Podmiot1 (sprzedawca): exercises PrefiksPodatnika + NrEORI,
+       two DaneKontaktowe nodes (parser collects all), DaneRejestrowe
+       with KRS/REGON/NazwaPelna, and StatusInfoPodatnika=1 flag. -->
+  <Podmiot1>
+    <PrefiksPodatnika>PL</PrefiksPodatnika>
+    <NrEORI>PL123456789012345</NrEORI>
+    <DaneIdentyfikacyjne>
+      <NIP>5265877635</NIP>
+      <Nazwa>Sprzedawca Rozszerzony Sp. z o.o.</Nazwa>
+    </DaneIdentyfikacyjne>
+    <Adres>
+      <KodKraju>PL</KodKraju>
+      <AdresL1>ul. Przykładowa 10/2</AdresL1>
+      <AdresL2>00-950 Warszawa</AdresL2>
+    </Adres>
+    <DaneKontaktowe>
+      <Email>kontakt@sprzedawca.example</Email>
+      <Telefon>22-111-22-33</Telefon>
+    </DaneKontaktowe>
+    <DaneKontaktowe>
+      <Email>biuro@sprzedawca.example</Email>
+      <Telefon>22-111-22-34</Telefon>
+    </DaneKontaktowe>
+    <DaneRejestrowe>
+      <KRS>0000123456</KRS>
+      <REGON>123456785</REGON>
+      <NazwaPelna>Sprzedawca Rozszerzony Spółka z ograniczoną odpowiedzialnością</NazwaPelna>
+    </DaneRejestrowe>
+    <StatusInfoPodatnika>1</StatusInfoPodatnika>
+  </Podmiot1>
+
+  <!-- Podmiot2 (nabywca): JST + GV flags (renderer shows badges),
+       NrKlienta + IDNabywcy (both optional), and AdresKoresp to exercise
+       the separate correspondence address branch. -->
+  <Podmiot2>
+    <DaneIdentyfikacyjne>
+      <NIP>6808208874</NIP>
+      <Nazwa>Jednostka Samorządu Terytorialnego — Test</Nazwa>
+    </DaneIdentyfikacyjne>
+    <Adres>
+      <KodKraju>PL</KodKraju>
+      <AdresL1>ul. Ratuszowa 1</AdresL1>
+      <AdresL2>00-001 Warszawa</AdresL2>
+    </Adres>
+    <AdresKoresp>
+      <KodKraju>PL</KodKraju>
+      <AdresL1>skr. poczt. 42</AdresL1>
+      <AdresL2>00-950 Warszawa</AdresL2>
+    </AdresKoresp>
+    <NrKlienta>KL-EXT-0001</NrKlienta>
+    <IDNabywcy>NAB-2026-042</IDNabywcy>
+    <JST>1</JST>
+    <GV>1</GV>
+  </Podmiot2>
+
+  <!-- Two Podmiot3 nodes with differing RolaPodmiotu3 values: the parser
+       returns odbiorcy as an array, so this exercises multi-row rendering.
+       Role 1 = faktor, role 2 = odbiorca (per plan spec). -->
+  <Podmiot3>
+    <DaneIdentyfikacyjne>
+      <NIP>1111111111</NIP>
+      <Nazwa>Faktor Finansowy S.A.</Nazwa>
+    </DaneIdentyfikacyjne>
+    <Adres>
+      <KodKraju>PL</KodKraju>
+      <AdresL1>ul. Bankowa 7</AdresL1>
+      <AdresL2>00-100 Warszawa</AdresL2>
+    </Adres>
+    <Rola>1</Rola>
+    <Udzial>100</Udzial>
+  </Podmiot3>
+  <Podmiot3>
+    <DaneIdentyfikacyjne>
+      <NIP>2222222222</NIP>
+      <Nazwa>Odbiorca Dostawy Sp. z o.o.</Nazwa>
+    </DaneIdentyfikacyjne>
+    <Adres>
+      <KodKraju>PL</KodKraju>
+      <AdresL1>ul. Magazynowa 12</AdresL1>
+      <AdresL2>02-200 Warszawa</AdresL2>
+    </Adres>
+    <Rola>2</Rola>
+  </Podmiot3>
+
+  <Fa>
+    <!-- Non-PLN currency triggers the currency note in the renderer. -->
+    <KodWaluty>EUR</KodWaluty>
+    <P_1>2026-04-10</P_1>
+    <P_1M>Warszawa</P_1M>
+    <P_2>FA/EXT/2026/04/0001</P_2>
+    <P_6>2026-04-01</P_6>
+
+    <!-- RodzajFaktury=KOR + OkresFaKorygowanej => "korygująca zbiorcza
+         (rabat)" label path in the renderer. -->
+    <RodzajFaktury>KOR</RodzajFaktury>
+    <OkresFaKorygowanej>2026-01</OkresFaKorygowanej>
+
+    <!-- Two DaneFaKorygowanej rows => array rendering. -->
+    <DaneFaKorygowanej>
+      <NrFaKorygowanej>FA/2026/01/0010</NrFaKorygowanej>
+      <DataWystFaKorygowanej>2026-01-15</DataWystFaKorygowanej>
+      <NrKSeFFaKorygowanej>5265877635-20260115-AAAAAA-AA</NrKSeFFaKorygowanej>
+    </DaneFaKorygowanej>
+    <DaneFaKorygowanej>
+      <NrFaKorygowanej>FA/2026/01/0011</NrFaKorygowanej>
+      <DataWystFaKorygowanej>2026-01-22</DataWystFaKorygowanej>
+      <NrKSeFFaKorygowanej>5265877635-20260122-BBBBBB-BB</NrKSeFFaKorygowanej>
+    </DaneFaKorygowanej>
+
+    <!-- Two tax-summary buckets populated (23% and 8%) so renderer
+         produces two rows in PodsumowanieStawek. -->
+    <P_13_1>800.00</P_13_1>
+    <P_14_1>184.00</P_14_1>
+    <P_13_2>200.00</P_13_2>
+    <P_14_2>16.00</P_14_2>
+    <P_15>1200.00</P_15>
+
+    <!-- Three FaWiersz: first two have netto (P_9A + P_11),
+         third is brutto-only (no P_9A, only P_9B + P_11A) to exercise
+         per-row brutto handling. Global brutto_mode? = false because
+         other rows have netto, so this exercises the parser's
+         per-row column selection. -->
+    <FaWiersz>
+      <NrWierszaFa>1</NrWierszaFa>
+      <P_7>Usługa doradcza</P_7>
+      <P_8A>godz.</P_8A>
+      <P_8B>8</P_8B>
+      <P_9A>100.00</P_9A>
+      <P_11>800.00</P_11>
+      <P_12>23</P_12>
+      <GTIN>05901234123457</GTIN>
+      <PKWiU>70.22.1</PKWiU>
+      <GTU>GTU_12</GTU>
+      <P_12_Zal_15>1</P_12_Zal_15>
+    </FaWiersz>
+    <FaWiersz>
+      <NrWierszaFa>2</NrWierszaFa>
+      <P_7>Materiały szkoleniowe</P_7>
+      <P_8A>szt.</P_8A>
+      <P_8B>10</P_8B>
+      <P_9A>20.00</P_9A>
+      <P_11>200.00</P_11>
+      <P_12>8</P_12>
+      <CN>4901</CN>
+    </FaWiersz>
+    <FaWiersz>
+      <NrWierszaFa>3</NrWierszaFa>
+      <P_7>Drobny gadżet (brutto only)</P_7>
+      <P_8A>szt.</P_8A>
+      <P_8B>1</P_8B>
+      <P_9B>24.60</P_9B>
+      <P_11A>24.60</P_11A>
+      <P_12>23</P_12>
+    </FaWiersz>
+    <DodatkowyOpis>
+      <NrWiersza>1</NrWiersza>
+      <Klucz>Numer zamówienia</Klucz>
+      <Wartosc>ZAM/2026/04/001</Wartosc>
+    </DodatkowyOpis>
+    <DodatkowyOpis>
+      <NrWiersza>0</NrWiersza>
+      <Klucz>Projekt</Klucz>
+      <Wartosc>KSeF-TS</Wartosc>
+    </DodatkowyOpis>
+
+    <!-- Adnotacje: flags + nested Zwolnienie/P_19 + PMarzy with both
+         P_PMarzy and P_PMarzy_3_1 to cover multiple procedure markers. -->
+    <Adnotacje>
+      <P_16>1</P_16>
+      <P_17>1</P_17>
+      <Zwolnienie>
+        <P_19>1</P_19>
+      </Zwolnienie>
+      <PMarzy>
+        <P_PMarzy>1</P_PMarzy>
+        <P_PMarzy_3_1>1</P_PMarzy_3_1>
+      </PMarzy>
+    </Adnotacje>
+
+    <!-- Rozliczenie: all four monetary totals populated so renderer
+         shows the full settlement block. -->
+    <Rozliczenie>
+      <Obciazenia>
+        <Kwota>30.00</Kwota>
+        <Powod>Koszt transportu</Powod>
+      </Obciazenia>
+      <Obciazenia>
+        <Kwota>20.00</Kwota>
+        <Powod>Opakowanie zwrotne</Powod>
+      </Obciazenia>
+      <SumaObciazen>50.00</SumaObciazen>
+      <Odliczenia>
+        <Kwota>30.00</Kwota>
+        <Powod>Rabat posprzedażowy</Powod>
+      </Odliczenia>
+      <SumaOdliczen>30.00</SumaOdliczen>
+      <DoZaplaty>1220.00</DoZaplaty>
+      <DoRozliczenia>0.00</DoRozliczenia>
+    </Rozliczenie>
+
+    <!-- Platnosc: Zaplacono=1 + DataZaplaty path, two TerminPlatnosci
+         (second uses TerminOpis with Ilosc/Jednostka/ZdarzeniePoczatkowe
+         to exercise the joined-string branch), LinkDoPlatnosci, IPKSeF,
+         two RachunekBankowy, one RachunekBankowyFaktora, Skonto with
+         both WarunkiSkonta and WysokoscSkonta, one ZaplataCzesciowa. -->
+    <Platnosc>
+      <Zaplacono>1</Zaplacono>
+      <DataZaplaty>2026-04-12</DataZaplaty>
+      <FormaPlatnosci>6</FormaPlatnosci>
+      <TerminPlatnosci>
+        <Termin>2026-04-30</Termin>
+      </TerminPlatnosci>
+      <TerminPlatnosci>
+        <Termin>2026-05-30</Termin>
+        <TerminOpis>
+          <Ilosc>30</Ilosc>
+          <Jednostka>dni</Jednostka>
+          <ZdarzeniePoczatkowe>od daty wystawienia</ZdarzeniePoczatkowe>
+        </TerminOpis>
+      </TerminPlatnosci>
+      <LinkDoPlatnosci>https://pay.example/invoice/EXT-0001</LinkDoPlatnosci>
+      <IPKSeF>203.0.113.7</IPKSeF>
+      <RachunekBankowy>
+        <NrRB>PL61109010140000071219812874</NrRB>
+        <SWIFT>WBKPPLPP</SWIFT>
+        <NazwaBanku>Bank Testowy SA</NazwaBanku>
+      </RachunekBankowy>
+      <RachunekBankowy>
+        <NrRB>PL27114020040000300201355387</NrRB>
+        <NazwaBanku>Drugi Bank Testowy SA</NazwaBanku>
+      </RachunekBankowy>
+      <RachunekBankowyFaktora>
+        <NrRB>PL83101010230000261395100000</NrRB>
+        <NazwaBanku>Faktor Bank SA</NazwaBanku>
+        <OpisRachunku>Rachunek cesji wierzytelności</OpisRachunku>
+      </RachunekBankowyFaktora>
+      <Skonto>
+        <WarunkiSkonta>Płatność w 7 dni</WarunkiSkonta>
+        <WysokoscSkonta>2.00</WysokoscSkonta>
+      </Skonto>
+      <ZaplataCzesciowa>
+        <KwotaZaplatyCzesciowej>600.00</KwotaZaplatyCzesciowej>
+        <DataZaplatyCzesciowej>2026-04-12</DataZaplatyCzesciowej>
+        <FormaPlatnosci>6</FormaPlatnosci>
+      </ZaplataCzesciowa>
+    </Platnosc>
+
+    <!-- WarunkiTransakcji: exercises the whole block including two
+         NrPartiiTowaru entries (parser returns array of trimmed strings),
+         one Umowy and one Zamowienia row. -->
+    <WarunkiTransakcji>
+      <WarunkiDostawy>DAP Warszawa (Incoterms 2020)</WarunkiDostawy>
+      <KursUmowny>4.3125</KursUmowny>
+      <WalutaUmowna>PLN</WalutaUmowna>
+      <Transport>
+        <RodzajTransportu>3</RodzajTransportu>
+        <NrZleceniaTransportu>ZL-2026-001</NrZleceniaTransportu>
+      </Transport>
+      <Umowy>
+        <DataUmowy>2026-03-01</DataUmowy>
+        <NrUmowy>UM/2026/03/01</NrUmowy>
+      </Umowy>
+      <Zamowienia>
+        <DataZamowienia>2026-03-20</DataZamowienia>
+        <NrZamowienia>ZM/2026/03/20</NrZamowienia>
+      </Zamowienia>
+      <NrPartiiTowaru>PARTIA-A-001</NrPartiiTowaru>
+      <NrPartiiTowaru>PARTIA-B-002</NrPartiiTowaru>
+    </WarunkiTransakcji>
+  </Fa>
+
+  <!-- Stopka: two StopkaFaktury lines (parser returns array of texts)
+       and one Rejestry with KRS + REGON + BDO. -->
+  <Stopka>
+    <Informacje>
+      <StopkaFaktury>Dziękujemy za współpracę.</StopkaFaktury>
+      <StopkaFaktury>Sąd Rejonowy dla m.st. Warszawy, KRS 0000123456.</StopkaFaktury>
+    </Informacje>
+    <Rejestry>
+      <KRS>0000123456</KRS>
+      <REGON>123456785</REGON>
+      <BDO>000123456</BDO>
+    </Rejestry>
+  </Stopka>
+</Faktura>
