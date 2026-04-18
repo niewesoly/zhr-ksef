@@ -1,6 +1,6 @@
 import type { FC } from "hono/jsx";
 import type { InvoiceFa3, InvoiceParty, Adnotacje, Rozliczenie } from "../ksef/parser.js";
-import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags } from "../ksef/dictionaries.js";
+import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags, zaplacono, znacznikZaplatyCzesciowej, formaPlatnosci } from "../ksef/dictionaries.js";
 import type { AdnotacjeInput } from "../ksef/dictionaries.js";
 
 // Renders a parsed FA(3) invoice to a fully self-contained HTML document.
@@ -572,6 +572,152 @@ const RozliczenieSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   );
 };
 
+function fmtMoneyStr(kwota: string | null, currency: string | null | undefined): string {
+  if (kwota == null) return "—";
+  const n = parseFloat(kwota);
+  if (isNaN(n)) return kwota;
+  return `${n.toFixed(2)} ${currency ?? ""}`.trim();
+}
+
+const Platnosc: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  const payment = invoice.payment;
+  if (!payment) return null;
+
+  const currency = invoice.currency ?? "PLN";
+  const infoOPlatnosci =
+    zaplacono(payment.zaplacono) ??
+    znacznikZaplatyCzesciowej(payment.znacznikZaplatyCzesciowej) ??
+    "—";
+
+  const allAccounts = [...payment.rachunkiBankowe, ...payment.rachunkiBankoweFaktora];
+  const factoringThreshold = payment.rachunkiBankowe.length;
+
+  const skontoHasData =
+    payment.skonto !== null &&
+    (payment.skonto.warunki !== null || payment.skonto.wysokosc !== null);
+
+  return (
+    <div class="ksef-section">
+      <h3 class="ksef-section__title">Płatność</h3>
+      <dl class="ksef-dl ksef-dl--two-col">
+        <dt>Informacja o płatności</dt>
+        <dd>{infoOPlatnosci}</dd>
+
+        {payment.dataZaplaty !== null ? (
+          <>
+            <dt>Data zapłaty</dt>
+            <dd>{fmtDate(payment.dataZaplaty)}</dd>
+          </>
+        ) : null}
+
+        {payment.formaPlatnosci !== null ? (
+          <>
+            <dt>Forma płatności</dt>
+            <dd>{formaPlatnosci(payment.formaPlatnosci)}</dd>
+          </>
+        ) : payment.opisPlatnosci !== null ? (
+          <>
+            <dt>Forma płatności</dt>
+            <dd>Płatność inna — {payment.opisPlatnosci}</dd>
+          </>
+        ) : null}
+
+        {payment.terminy.map((t, idx) => {
+          const label =
+            payment.terminy.length > 1
+              ? `Termin płatności (${idx + 1})`
+              : "Termin płatności";
+          const dateStr = fmtDate(t.termin);
+          const desc = t.terminOpis ? ` — ${t.terminOpis}` : "";
+          return (
+            <>
+              <dt key={`termin-dt-${idx}`}>{label}</dt>
+              <dd key={`termin-dd-${idx}`}>{dateStr}{desc}</dd>
+            </>
+          );
+        })}
+
+        {payment.ipKSeF !== null ? (
+          <>
+            <dt>Identyfikator płatności KSeF</dt>
+            <dd>{payment.ipKSeF}</dd>
+          </>
+        ) : null}
+
+        {payment.linkDoPlatnosci !== null ? (
+          <>
+            <dt>Link do płatności</dt>
+            <dd><a href={payment.linkDoPlatnosci}>{payment.linkDoPlatnosci}</a></dd>
+          </>
+        ) : null}
+      </dl>
+
+      {allAccounts.map((rb, idx) => {
+        const isFactor = idx >= factoringThreshold;
+        const title = isFactor ? "Rachunek bankowy faktora" : "Rachunek bankowy";
+        return (
+          <div key={String(idx)} class="ksef-rachunek">
+            <h4>{title}</h4>
+            <dl class="ksef-dl">
+              {rb.nrRB !== null ? (
+                <><dt>Numer</dt><dd>{rb.nrRB}</dd></>
+              ) : null}
+              {rb.swift !== null ? (
+                <><dt>SWIFT</dt><dd>{rb.swift}</dd></>
+              ) : null}
+              {rb.nazwaBanku !== null ? (
+                <><dt>Nazwa banku</dt><dd>{rb.nazwaBanku}</dd></>
+              ) : null}
+              {rb.opisRachunku !== null ? (
+                <><dt>Opis</dt><dd>{rb.opisRachunku}</dd></>
+              ) : null}
+            </dl>
+          </div>
+        );
+      })}
+
+      {skontoHasData ? (
+        <div class="ksef-section__inner">
+          <h4>Skonto</h4>
+          <dl class="ksef-dl">
+            {payment.skonto!.warunki !== null ? (
+              <><dt>Warunki</dt><dd>{payment.skonto!.warunki}</dd></>
+            ) : null}
+            {payment.skonto!.wysokosc !== null ? (
+              <><dt>Wysokość</dt><dd>{payment.skonto!.wysokosc}</dd></>
+            ) : null}
+          </dl>
+        </div>
+      ) : null}
+
+      {payment.zaplataCzesciowa.length > 0 ? (
+        <table class="ksef-table">
+          <thead>
+            <tr>
+              <th>Data zapłaty częściowej</th>
+              <th class="num">Kwota</th>
+              <th>Forma płatności</th>
+            </tr>
+          </thead>
+          <tbody>
+            {payment.zaplataCzesciowa.map((zc, idx) => (
+              <tr key={String(idx)}>
+                <td>{fmtDate(zc.data)}</td>
+                <td class="num">{fmtMoneyStr(zc.kwota, currency)}</td>
+                <td>
+                  {zc.platnoscInna !== null
+                    ? (zc.opisPlatnosci ?? "—")
+                    : formaPlatnosci(zc.formaPlatnosci)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : null}
+    </div>
+  );
+};
+
 export function renderInvoiceHtml(invoice: InvoiceFa3): string {
   const element = <InvoiceHtml invoice={invoice} />;
   // hono/jsx elements stringify directly; `toString()` produces the
@@ -604,22 +750,7 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
 
         <RozliczenieSection invoice={invoice} />
 
-        {invoice.payment ? (
-          <>
-            <h2>Płatność</h2>
-            <div class="card">
-              {invoice.payment.formaPlatnosci ? (
-                <div>Forma: {invoice.payment.formaPlatnosci}</div>
-              ) : null}
-              {invoice.payment.terminy[0]?.termin ? (
-                <div>Termin: {invoice.payment.terminy[0].termin}</div>
-              ) : null}
-              {invoice.payment.zaplacono ? (
-                <div class="muted">Zapłacono: {invoice.payment.zaplacono}</div>
-              ) : null}
-            </div>
-          </>
-        ) : null}
+        <Platnosc invoice={invoice} />
 
         {invoice.correctionReason ? (
           <div class="card">

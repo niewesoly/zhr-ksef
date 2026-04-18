@@ -82,4 +82,17 @@ suite("html-renderer", () => {
     assert.match(html, /Rozliczenie/);
     assert.match(html, /Suma obciążeń/);
   });
+
+  // D11: Platnosc section
+  test("platnosc renders Płatność section title and Rachunek bankowy entries", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /Płatność/);
+    assert.match(html, /Rachunek bankowy/);
+  });
+
+  test("platnosc renders Skonto block and Data zapłaty częściowej table header", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /Skonto/);
+    assert.match(html, /Data zapłaty częściowej/);
+  });
 });
