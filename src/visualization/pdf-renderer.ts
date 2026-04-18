@@ -15,45 +15,77 @@ import type { InvoiceFa3 } from "../ksef/parser.js";
 // factory (`createElement`) is invoked explicitly.
 
 const styles = StyleSheet.create({
-  page: { padding: 32, fontSize: 9, fontFamily: "Helvetica", color: "#111" },
-  header: { fontSize: 14, marginBottom: 4, fontWeight: 700 },
-  muted: { color: "#6b7280", fontSize: 9, marginBottom: 2 },
-  sectionTitle: { marginTop: 12, marginBottom: 4, fontSize: 10, fontWeight: 700 },
-  row: { flexDirection: "row" },
-  card: {
-    borderStyle: "solid",
-    borderColor: "#e5e7eb",
-    borderWidth: 1,
-    borderRadius: 4,
-    padding: 6,
-    marginRight: 8,
-    flexGrow: 1,
-    flexBasis: 0,
+  page: {
+    padding: 28,
+    fontSize: 8,
+    fontFamily: "Helvetica",
+    color: "#111",
+    lineHeight: 1.35,
   },
-  table: { width: "100%", marginTop: 4 },
-  tHeader: {
+  // Section heading bar (matches HTML ksef-section__title)
+  sectionTitle: {
+    fontSize: 9,
+    backgroundColor: "#e8e8e8",
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    marginBottom: 3,
+    borderLeftWidth: 2,
+    borderLeftColor: "#555",
+    borderStyle: "solid",
+    fontFamily: "Helvetica-Bold",
+  },
+  // Definition list row (two columns: label + value)
+  dlRow: { flexDirection: "row", marginBottom: 1 },
+  dlLabel: { width: "42%", fontFamily: "Helvetica-Bold", color: "#444", paddingRight: 3 },
+  dlValue: { width: "58%" },
+  // Two-column DL variant
+  dlRowTwo: { flexDirection: "row", marginBottom: 1 },
+  dlLabelTwo: { width: "48%", fontFamily: "Helvetica-Bold", color: "#444", paddingRight: 3 },
+  dlValueTwo: { width: "52%" },
+  // Table shared
+  table: { width: "100%", marginTop: 3 },
+  tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#f9fafb",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    backgroundColor: "#e8e8e8",
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#888",
     borderStyle: "solid",
   },
-  tRow: {
+  tableRow: {
     flexDirection: "row",
     borderBottomWidth: 0.5,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "#888",
     borderStyle: "solid",
   },
-  cell: { padding: 3, fontSize: 9 },
-  cellNum: { padding: 3, fontSize: 9, textAlign: "right" },
-  cellLpWidth: { width: "6%" },
-  cellNameWidth: { width: "40%" },
-  cellQtyWidth: { width: "10%" },
-  cellMeasureWidth: { width: "10%" },
-  cellPriceWidth: { width: "14%" },
-  cellRateWidth: { width: "8%" },
-  cellTotalWidth: { width: "12%" },
-  summary: { marginTop: 6, width: 240, alignSelf: "flex-end" },
+  cell: { padding: 2, fontSize: 8 },
+  cellNum: { padding: 2, fontSize: 8, textAlign: "right" },
+  // Section wrapper
+  section: { marginBottom: 6 },
+  // Naglowek
+  naglowekRow: { flexDirection: "row", marginBottom: 8, borderBottomWidth: 1, borderBottomColor: "#111", borderStyle: "solid", paddingBottom: 4 },
+  naglowekBrand: { fontSize: 14, fontFamily: "Helvetica-Bold", flexGrow: 1 },
+  naglowekBrandE: { color: "#b71c1c" },
+  naglowekMeta: { textAlign: "right" },
+  naglowekLabel: { fontSize: 7, color: "#555", textTransform: "uppercase" },
+  naglowekNumber: { fontSize: 11, fontFamily: "Helvetica-Bold" },
+  naglowekRodzaj: { fontSize: 9, fontStyle: "italic" },
+  naglowekKsef: { fontSize: 7, color: "#555" },
+  // Party columns
+  partiesRow: { flexDirection: "row", marginBottom: 6 },
+  partyCol: { flexGrow: 1, flexBasis: 0, borderWidth: 0.75, borderColor: "#bbb", borderStyle: "solid", padding: 5, marginRight: 4 },
+  partyLabel: { fontFamily: "Helvetica-Bold", color: "#444" },
+  partyName: { fontFamily: "Helvetica-Bold", marginTop: 1 },
+  // List (ksef-list equivalent)
+  listItem: { marginBottom: 1, paddingLeft: 8 },
+  // Bank account box
+  bankBox: { borderWidth: 0.75, borderColor: "#bbb", borderStyle: "solid", padding: 4, marginTop: 3 },
+  bankTitle: { fontFamily: "Helvetica-Bold", marginBottom: 2 },
+  // Footer / Stopka
+  stopka: { marginTop: 10, fontSize: 7, color: "#444", borderTopWidth: 0.75, borderTopColor: "#bbb", borderStyle: "solid", paddingTop: 3 },
+  // Total line
+  totalRow: { flexDirection: "row", marginTop: 3 },
+  totalLabel: { fontFamily: "Helvetica-Bold", flexGrow: 1, textAlign: "right", paddingRight: 6 },
+  totalValue: { fontFamily: "Helvetica-Bold", width: 80, textAlign: "right" },
 });
 
 function fmtMoney(n: number | null, currency: string | null | undefined): string {
@@ -76,7 +108,7 @@ function party(title: string, p: InvoiceFa3["seller"] | null): ReactElement | nu
   if (p.adres?.kodKraju) lines.push(p.adres.kodKraju);
   return h(
     View,
-    { style: styles.card },
+    { style: styles.partyCol },
     h(Text, { style: styles.sectionTitle }, title),
     ...lines.map((l, i) => h(Text, { key: i, style: styles.cell }, l)),
   );
@@ -85,14 +117,14 @@ function party(title: string, p: InvoiceFa3["seller"] | null): ReactElement | nu
 function lineItemRow(item: InvoiceFa3["lineItems"][number], currency: string): ReactElement {
   return h(
     View,
-    { key: item.lp, style: styles.tRow },
-    h(Text, { style: [styles.cell, styles.cellLpWidth] }, String(item.lp)),
-    h(Text, { style: [styles.cell, styles.cellNameWidth] }, item.nazwa ?? "—"),
-    h(Text, { style: [styles.cellNum, styles.cellQtyWidth] }, fmtQty(item.ilosc)),
-    h(Text, { style: [styles.cell, styles.cellMeasureWidth] }, item.miara ?? "—"),
-    h(Text, { style: [styles.cellNum, styles.cellPriceWidth] }, fmtMoney(item.cenaJednNetto, currency)),
-    h(Text, { style: [styles.cell, styles.cellRateWidth] }, item.stawkaPodatku ?? "—"),
-    h(Text, { style: [styles.cellNum, styles.cellTotalWidth] }, fmtMoney(item.wartoscNetto, currency)),
+    { key: item.lp, style: styles.tableRow },
+    h(Text, { style: [styles.cell, { width: "6%" }] }, String(item.lp)),
+    h(Text, { style: [styles.cell, { width: "40%" }] }, item.nazwa ?? "—"),
+    h(Text, { style: [styles.cellNum, { width: "10%" }] }, fmtQty(item.ilosc)),
+    h(Text, { style: [styles.cell, { width: "10%" }] }, item.miara ?? "—"),
+    h(Text, { style: [styles.cellNum, { width: "14%" }] }, fmtMoney(item.cenaJednNetto, currency)),
+    h(Text, { style: [styles.cell, { width: "8%" }] }, item.stawkaPodatku ?? "—"),
+    h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscNetto, currency)),
   );
 }
 
@@ -102,29 +134,29 @@ function buildDocument(invoice: InvoiceFa3): ReactElement<DocumentProps> {
   const header = h(
     View,
     null,
-    h(Text, { style: styles.header }, invoice.invoiceTypeLabel),
-    h(Text, { style: styles.muted }, `Numer: ${invoice.invoiceNumber ?? "—"}`),
-    h(Text, { style: styles.muted }, `KSeF: ${invoice.ksefNumber}`),
-    h(Text, { style: styles.muted }, `Data wystawienia: ${invoice.issueDate ?? "—"}`),
+    h(Text, { style: styles.naglowekBrand }, invoice.invoiceTypeLabel),
+    h(Text, { style: styles.naglowekKsef }, `Numer: ${invoice.invoiceNumber ?? "—"}`),
+    h(Text, { style: styles.naglowekKsef }, `KSeF: ${invoice.ksefNumber}`),
+    h(Text, { style: styles.naglowekKsef }, `Data wystawienia: ${invoice.issueDate ?? "—"}`),
   );
 
   const parties = h(
     View,
-    { style: [styles.row, { marginTop: 8 }] },
+    { style: [styles.partiesRow, { marginTop: 8 }] },
     party("Sprzedawca", invoice.seller),
     party("Nabywca", invoice.buyer),
   );
 
   const itemsHeader = h(
     View,
-    { style: styles.tHeader },
-    h(Text, { style: [styles.cell, styles.cellLpWidth] }, "Lp."),
-    h(Text, { style: [styles.cell, styles.cellNameWidth] }, "Nazwa"),
-    h(Text, { style: [styles.cellNum, styles.cellQtyWidth] }, "Ilość"),
-    h(Text, { style: [styles.cell, styles.cellMeasureWidth] }, "Miara"),
-    h(Text, { style: [styles.cellNum, styles.cellPriceWidth] }, "Cena netto"),
-    h(Text, { style: [styles.cell, styles.cellRateWidth] }, "Stawka"),
-    h(Text, { style: [styles.cellNum, styles.cellTotalWidth] }, "Wartość netto"),
+    { style: styles.tableHeader },
+    h(Text, { style: [styles.cell, { width: "6%" }] }, "Lp."),
+    h(Text, { style: [styles.cell, { width: "40%" }] }, "Nazwa"),
+    h(Text, { style: [styles.cellNum, { width: "10%" }] }, "Ilość"),
+    h(Text, { style: [styles.cell, { width: "10%" }] }, "Miara"),
+    h(Text, { style: [styles.cellNum, { width: "14%" }] }, "Cena netto"),
+    h(Text, { style: [styles.cell, { width: "8%" }] }, "Stawka"),
+    h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość netto"),
   );
 
   const items = h(
@@ -138,11 +170,11 @@ function buildDocument(invoice: InvoiceFa3): ReactElement<DocumentProps> {
     ? null
     : h(
         View,
-        { style: styles.summary },
+        { style: { marginTop: 6, width: 240, alignSelf: "flex-end" } },
         ...invoice.taxSummary.map((r, i) =>
           h(
             View,
-            { key: i, style: styles.tRow },
+            { key: i, style: styles.tableRow },
             h(Text, { style: [styles.cell, { width: "30%" }] }, r.label),
             h(Text, { style: [styles.cellNum, { width: "25%" }] }, fmtMoney(r.kwotaNetto, currency)),
             h(Text, { style: [styles.cellNum, { width: "20%" }] }, fmtMoney(r.kwotaPodatku, currency)),
@@ -151,9 +183,9 @@ function buildDocument(invoice: InvoiceFa3): ReactElement<DocumentProps> {
         ),
         h(
           View,
-          { style: [styles.tRow, { marginTop: 4 }] },
-          h(Text, { style: [styles.cell, { width: "75%", fontWeight: 700 }] }, "Razem do zapłaty"),
-          h(Text, { style: [styles.cellNum, { width: "25%", fontWeight: 700 }] }, fmtMoney(invoice.totalGross, currency)),
+          { style: [styles.tableRow, { marginTop: 4 }] },
+          h(Text, { style: [styles.cell, { width: "75%", fontFamily: "Helvetica-Bold" }] }, "Razem do zapłaty"),
+          h(Text, { style: [styles.cellNum, { width: "25%", fontFamily: "Helvetica-Bold" }] }, fmtMoney(invoice.totalGross, currency)),
         ),
       );
 
