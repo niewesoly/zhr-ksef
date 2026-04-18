@@ -148,6 +148,18 @@ suite("parseInvoiceFa3: rozliczenie", () => {
   });
 });
 
+suite("parseInvoiceFa3: warunkiTransakcji", () => {
+  test("surfaces scalars, umowy, zamowienia, nrPartiiTowaru", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.warunkiTransakcji);
+    assert.equal(inv.warunkiTransakcji.warunkiDostawy, "DAP Warszawa (Incoterms 2020)");
+    assert.equal(inv.warunkiTransakcji.umowy.length, 1);
+    assert.equal(inv.warunkiTransakcji.umowy[0].numer, "UM/2026/03/01");
+    assert.equal(inv.warunkiTransakcji.zamowienia[0].data, "2026-03-20");
+    assert.deepEqual(inv.warunkiTransakcji.nrPartiiTowaru, ["PARTIA-A-001", "PARTIA-B-002"]);
+  });
+});
+
 suite("parseInvoiceFa3: payment", () => {
   test("returns two terminy from extended fixture", () => {
     const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");

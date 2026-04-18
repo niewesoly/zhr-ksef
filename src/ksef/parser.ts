@@ -173,6 +173,18 @@ export interface Adnotacje {
   pmarzy: AdnotacjePMarzy;
 }
 
+export interface WarunkiTransakcji {
+  warunkiDostawy: string | null;
+  kursUmowny: string | null;
+  walutaUmowna: string | null;
+  podmiotPosredniczacy: string | null;
+  rodzajTransportu: string | null;
+  numerSrodkaTransportu: string | null;
+  umowy: { data: string | null; numer: string | null }[];
+  zamowienia: { data: string | null; numer: string | null }[];
+  nrPartiiTowaru: string[];
+}
+
 export interface RozliczenieLineItem {
   kwota: number | null;
   powod: string | null;
@@ -214,6 +226,7 @@ export interface InvoiceFa3 {
   okresFaKorygowanej: string | null;
   adnotacje: Adnotacje | null;
   rozliczenie: Rozliczenie | null;
+  warunkiTransakcji: WarunkiTransakcji | null;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -289,6 +302,9 @@ const parser = new XMLParser({
       "ZaplataCzesciowa",
       "Obciazenia",
       "Odliczenia",
+      "Umowy",
+      "Zamowienia",
+      "NrPartiiTowaru",
     ].some((n) => name.endsWith(n)),
   parseAttributeValue: true,
   parseTagValue: true,
@@ -583,6 +599,42 @@ function parseRozliczenie(fa: Record<string, unknown>): Rozliczenie | null {
   };
 }
 
+function parseWarunkiTransakcji(fa: Record<string, unknown>): WarunkiTransakcji | null {
+  const wt = findFieldRecord(fa, "WarunkiTransakcji");
+  if (!wt) return null;
+
+  const umowy = toArray(findField(wt, "Umowy"))
+    .filter(isRecord)
+    .map((n) => ({
+      data: findFieldString(n, "DataUmowy"),
+      numer: findFieldString(n, "NrUmowy"),
+    }));
+
+  const zamowienia = toArray(findField(wt, "Zamowienia"))
+    .filter(isRecord)
+    .map((n) => ({
+      data: findFieldString(n, "DataZamowienia"),
+      numer: findFieldString(n, "NrZamowienia"),
+    }));
+
+  const rawNrPartii = findField(wt, "NrPartiiTowaru");
+  const nrPartiiTowaru = (Array.isArray(rawNrPartii) ? rawNrPartii : rawNrPartii != null ? [rawNrPartii] : [])
+    .map((v: unknown) => String(v).trim())
+    .filter((s) => s.length > 0);
+
+  return {
+    warunkiDostawy: findFieldString(wt, "WarunkiDostawy"),
+    kursUmowny: findFieldString(wt, "KursUmowny"),
+    walutaUmowna: findFieldString(wt, "WalutaUmowna"),
+    podmiotPosredniczacy: findFieldString(wt, "PodmiotPosredniczacy"),
+    rodzajTransportu: findFieldString(wt, "RodzajTransportu"),
+    numerSrodkaTransportu: findFieldString(wt, "NumerSrodkaTransportu"),
+    umowy,
+    zamowienia,
+    nrPartiiTowaru,
+  };
+}
+
 function parseHeader(faktura: Record<string, unknown>): InvoiceHeader {
   const naglowek = findFieldRecord(faktura, "Naglowek");
   if (!naglowek) {
@@ -682,5 +734,6 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     okresFaKorygowanej,
     adnotacje: parseAdnotacje(fa),
     rozliczenie: parseRozliczenie(fa),
+    warunkiTransakcji: parseWarunkiTransakcji(fa),
   };
 }
