@@ -281,6 +281,7 @@ const parser = new XMLParser({
   isArray: (name) =>
     [
       "FaWiersz",
+      "Podmiot3",
       "RachunekBankowy",
       "RachunekBankowyFaktora",
       "DodatkowyOpis",
