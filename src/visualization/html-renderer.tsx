@@ -487,6 +487,21 @@ const Wiersze: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   );
 };
 
+const Adnotacje: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  const flags = adnotacjeFlags(invoice.adnotacje as AdnotacjeInput | null);
+  if (flags.length === 0) return null;
+  return (
+    <div class="ksef-section">
+      <h3 class="ksef-section__title">Adnotacje</h3>
+      <ul class="ksef-list">
+        {flags.map((flag, i) => (
+          <li key={String(i)}>{flag}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 const PodsumowanieStawek: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   const { taxSummary, currency } = invoice;
   if (taxSummary.length === 0) return null;
@@ -546,6 +561,8 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
         <Wiersze invoice={invoice} />
 
         <PodsumowanieStawek invoice={invoice} />
+
+        <Adnotacje invoice={invoice} />
 
         {invoice.payment ? (
           <>
