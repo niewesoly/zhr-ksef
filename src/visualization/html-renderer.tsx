@@ -2,6 +2,7 @@ import type { FC } from "hono/jsx";
 import type { InvoiceFa3, InvoiceParty, Adnotacje, Rozliczenie } from "../ksef/parser.js";
 import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags, zaplacono, znacznikZaplatyCzesciowej, formaPlatnosci, rodzajTransportu, gtu } from "../ksef/dictionaries.js";
 import type { AdnotacjeInput } from "../ksef/dictionaries.js";
+import { fmtDate, fmtMoney, fmtQty, buildAdresLines } from "./format.js";
 
 // Renders a parsed FA(3) invoice to a fully self-contained HTML document.
 // Uses only inline `<style>` so the CSP `default-src 'none'` block does not
@@ -199,28 +200,6 @@ const STYLES = `
   }
 `;
 
-function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  const parts = d.split("-");
-  if (parts.length !== 3) return d;
-  return `${parts[2]}.${parts[1]}.${parts[0]}`;
-}
-
-function fmtMoney(n: number | null, currency: string | null | undefined): string {
-  if (n == null) return "—";
-  return `${n.toFixed(2)} ${currency ?? ""}`.trim();
-}
-
-function fmtQty(n: number | null): string {
-  if (n == null) return "—";
-  return Number.isInteger(n) ? String(n) : n.toString();
-}
-
-function buildAdresLines(addr: { adresL1: string | null; adresL2: string | null; kodKraju: string | null } | null): string[] {
-  if (!addr) return [];
-  const lines: (string | null)[] = [addr.adresL1, addr.adresL2, kraj(addr.kodKraju)];
-  return lines.filter((l): l is string => l !== null && l.trim() !== "");
-}
 
 type PodmiotRole = "sprzedawca" | "nabywca" | "odbiorca";
 
@@ -228,8 +207,8 @@ const Podmiot: FC<{ podmiot: InvoiceParty; role: PodmiotRole }> = ({ podmiot, ro
   const nipParts = [podmiot.prefiksPodatnika, podmiot.nip].filter(
     (p): p is string => p !== null && p.trim() !== "",
   );
-  const adresLines = buildAdresLines(podmiot.adres);
-  const adresKorespLines = buildAdresLines(podmiot.adresKoresp);
+  const adresLines = buildAdresLines(podmiot.adres, kraj);
+  const adresKorespLines = buildAdresLines(podmiot.adresKoresp, kraj);
 
   return (
     <div class="ksef-podmiot">

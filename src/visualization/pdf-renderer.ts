@@ -26,6 +26,7 @@ Font.register({
   ],
 });
 import type { InvoiceFa3 } from "../ksef/parser.js";
+import { fmtDate, fmtMoney, fmtQty } from "./format.js";
 import {
   rodzajFaktury,
   kraj,
@@ -118,27 +119,10 @@ const styles = StyleSheet.create({
   totalValue: { fontFamily: "LiberationSans", fontWeight: "bold", width: 80, textAlign: "right" },
 });
 
-function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  const m = d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return "—";
-  return `${m[3]}.${m[2]}.${m[1]}`;
-}
-
-function fmtMoney(n: number | null, currency: string | null | undefined): string {
-  if (n == null) return "—";
-  return `${n.toFixed(2)} ${currency ?? ""}`.trim();
-}
-
 function fmtMoneyStr(s: string | null, currency: string | null | undefined): string {
   if (s == null) return "—";
   const n = parseFloat(s);
   return isNaN(n) ? "—" : fmtMoney(n, currency);
-}
-
-function fmtQty(n: number | null): string {
-  if (n == null) return "—";
-  return Number.isInteger(n) ? String(n) : n.toString();
 }
 
 function dlRow(label: string, value: string, two = false): ReactElement {
