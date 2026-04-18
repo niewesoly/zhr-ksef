@@ -751,12 +751,6 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
         <RozliczenieSection invoice={invoice} />
 
         <Platnosc invoice={invoice} />
-
-        {invoice.correctionReason ? (
-          <div class="card">
-            <div>Przyczyna: {invoice.correctionReason}</div>
-          </div>
-        ) : null}
       </body>
     </html>
   );
