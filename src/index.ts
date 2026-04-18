@@ -13,6 +13,7 @@ import { tenantScopeMiddleware } from "./api/middleware/tenant-scope.js";
 import { tenantTxMiddleware } from "./api/middleware/tenant-tx.js";
 import { buildOpenApiDocument } from "./api/openapi/spec.js";
 import { invoicesRouter } from "./api/routes/invoices.js";
+import { previewRouter } from "./api/routes/preview.js";
 import { syncRouter } from "./api/routes/sync.js";
 import { tenantsRouter } from "./api/routes/tenants.js";
 import type { AppEnv } from "./api/types.js";
@@ -48,6 +49,12 @@ app.get("/api/v1/docs", swaggerUI({ url: "/api/v1/openapi.json" }));
 
 // Unauthenticated liveness probe — does not touch the DB.
 app.get("/health", (c) => c.json({ status: "ok" }));
+
+// Visualization preview — accepts raw FA(3) XML, renders without DB/auth.
+// Disabled in production; only useful for local dev and CI smoke tests.
+if (process.env["NODE_ENV"] !== "production") {
+  app.route("/api/v1/preview", previewRouter);
+}
 
 // Authenticated readiness probe — verifies DB connectivity.
 app.get("/health/detailed", authMiddleware, async (c) => {
