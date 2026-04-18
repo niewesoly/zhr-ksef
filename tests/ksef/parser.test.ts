@@ -147,3 +147,66 @@ suite("parseInvoiceFa3: rozliczenie", () => {
     assert.deepEqual(inv.rozliczenie.odliczenia, []);
   });
 });
+
+suite("parseInvoiceFa3: payment", () => {
+  test("returns two terminy from extended fixture", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.payment, "payment should not be null");
+    assert.equal(inv.payment.terminy.length, 2);
+    assert.equal(inv.payment.terminy[0].termin, "2026-04-30");
+    assert.equal(inv.payment.terminy[1].termin, "2026-05-30");
+  });
+
+  test("second termin has terminOpis joined from Ilosc/Jednostka/ZdarzeniePoczatkowe", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.payment);
+    assert.equal(inv.payment.terminy[1].terminOpis, "30 dni od daty wystawienia");
+  });
+
+  test("rachunkiBankoweFaktora has one entry from extended fixture", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.payment);
+    assert.equal(inv.payment.rachunkiBankoweFaktora.length, 1);
+    assert.equal(inv.payment.rachunkiBankoweFaktora[0].nrRB, "PL83101010230000261395100000");
+    assert.equal(inv.payment.rachunkiBankoweFaktora[0].nazwaBanku, "Faktor Bank SA");
+    assert.equal(inv.payment.rachunkiBankoweFaktora[0].opisRachunku, "Rachunek cesji wierzytelności");
+  });
+
+  test("skonto.warunki is populated", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.payment);
+    assert.ok(inv.payment.skonto, "skonto should not be null");
+    assert.equal(inv.payment.skonto.warunki, "Płatność w 7 dni");
+    // fast-xml-parser parses "2.00" → number 2, findFieldString → "2"
+    assert.equal(inv.payment.skonto.wysokosc, "2");
+  });
+
+  test("rachunkiBankowe has two entries with new field names", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.payment);
+    assert.equal(inv.payment.rachunkiBankowe.length, 2);
+    assert.equal(inv.payment.rachunkiBankowe[0].nrRB, "PL61109010140000071219812874");
+    assert.equal(inv.payment.rachunkiBankowe[0].swift, "WBKPPLPP");
+    assert.equal(inv.payment.rachunkiBankowe[0].nazwaBanku, "Bank Testowy SA");
+  });
+
+  test("top-level payment fields are populated", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.payment);
+    assert.equal(inv.payment.zaplacono, "1");
+    assert.equal(inv.payment.dataZaplaty, "2026-04-12");
+    assert.equal(inv.payment.formaPlatnosci, "6");
+    assert.equal(inv.payment.linkDoPlatnosci, "https://pay.example/invoice/EXT-0001");
+    assert.equal(inv.payment.ipKSeF, "203.0.113.7");
+  });
+
+  test("zaplataCzesciowa has one entry", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.payment);
+    assert.equal(inv.payment.zaplataCzesciowa.length, 1);
+    // fast-xml-parser parses "600.00" → number 600, findFieldString → "600"
+    assert.equal(inv.payment.zaplataCzesciowa[0].kwota, "600");
+    assert.equal(inv.payment.zaplataCzesciowa[0].data, "2026-04-12");
+    assert.equal(inv.payment.zaplataCzesciowa[0].formaPlatnosci, "6");
+  });
+});

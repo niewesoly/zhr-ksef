@@ -87,19 +87,42 @@ export interface AdditionalInfo {
   tresc: string;
 }
 
-export interface PaymentInfo {
-  method: string | null;
-  info: string | null;
-  dueDate: string | null;
-  dueAmount: number | null;
+export interface PaymentTerm {
+  termin: string | null;
+  terminOpis: string | null; // "Ilość Jednostka Zdarzenie" joined
+  kwota: number | null;
 }
 
 export interface BankAccount {
-  iban: string | null;
+  nrRB: string | null;
   swift: string | null;
-  bankName: string | null;
-  ownAccount: boolean;
-  description: string | null;
+  nazwaBanku: string | null;
+  rachunekWlasnyBanku: string | null;
+  opisRachunku: string | null;
+}
+
+export interface PartialPayment {
+  kwota: string | null;
+  data: string | null;
+  formaPlatnosci: string | null;
+  platnoscInna: string | null;
+  opisPlatnosci: string | null;
+}
+
+export interface Payment {
+  zaplacono: string | null;
+  dataZaplaty: string | null;
+  znacznikZaplatyCzesciowej: string | null;
+  formaPlatnosci: string | null;
+  platnoscInna: string | null;
+  opisPlatnosci: string | null;
+  linkDoPlatnosci: string | null;
+  ipKSeF: string | null;
+  terminy: PaymentTerm[];
+  rachunkiBankowe: BankAccount[];
+  rachunkiBankoweFaktora: BankAccount[];
+  skonto: { warunki: string | null; wysokosc: string | null } | null;
+  zaplataCzesciowa: PartialPayment[];
 }
 
 export interface RegistryEntry {
@@ -182,8 +205,7 @@ export interface InvoiceFa3 {
   totalGross: number | null;
   taxSummary: TaxSummaryRow[];
   additionalInfo: AdditionalInfo[];
-  payment: PaymentInfo | null;
-  bankAccounts: BankAccount[];
+  payment: Payment | null;
   registries: RegistryEntry[];
   correctedInvoiceNumber: string | null;
   correctedInvoiceDate: string | null;
@@ -257,9 +279,16 @@ const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "@_",
   isArray: (name) =>
-    ["FaWiersz", "RachunekBankowy", "DodatkowyOpis", "TerminPlatnosci", "Obciazenia", "Odliczenia"].some((n) =>
-      name.endsWith(n),
-    ),
+    [
+      "FaWiersz",
+      "RachunekBankowy",
+      "RachunekBankowyFaktora",
+      "DodatkowyOpis",
+      "TerminPlatnosci",
+      "ZaplataCzesciowa",
+      "Obciazenia",
+      "Odliczenia",
+    ].some((n) => name.endsWith(n)),
   parseAttributeValue: true,
   parseTagValue: true,
   // Prevent precision loss for IBANs (26 digits) and similar long numeric strings
@@ -396,51 +425,83 @@ function parseAdditionalInfo(fa: Record<string, unknown>): AdditionalInfo[] {
     .filter((x): x is AdditionalInfo => x !== null);
 }
 
-function parsePayment(platnosc: Record<string, unknown>): PaymentInfo {
-  const methodCode = findFieldString(platnosc, "FormaPlatnosci");
-  const info = findFieldString(platnosc, "InformacjaOPlatnosci");
-
-  // TerminPlatnosci may be an object with Termin field or a simple date string
-  const terminRaw = findField(platnosc, "TerminPlatnosci");
-  let dueDate: string | null = null;
-  let dueAmount: number | null = null;
-
-  if (isRecord(terminRaw)) {
-    dueDate = findFieldString(terminRaw, "Termin");
-    dueAmount = findFieldNumber(terminRaw, "Kwota");
-  } else if (Array.isArray(terminRaw) && terminRaw.length > 0) {
-    const first = terminRaw[0];
-    if (isRecord(first)) {
-      dueDate = findFieldString(first, "Termin");
-      dueAmount = findFieldNumber(first, "Kwota");
-    }
-  } else if (terminRaw != null) {
-    dueDate = String(terminRaw).trim() || null;
-  }
-
+function parseBankAccount(row: Record<string, unknown>): BankAccount {
   return {
-    method: methodCode ? (PAYMENT_METHOD[methodCode] ?? methodCode) : null,
-    info,
-    dueDate,
-    dueAmount,
+    nrRB: findFieldString(row, "NrRB"),
+    swift: findFieldString(row, "SWIFT"),
+    nazwaBanku: findFieldString(row, "NazwaBanku"),
+    rachunekWlasnyBanku: findFieldString(row, "RachunekWlasnyBanku"),
+    opisRachunku: findFieldString(row, "OpisRachunku"),
   };
 }
 
-function parseBankAccounts(platnosc: Record<string, unknown>): BankAccount[] {
-  const rows = toArray(findField(platnosc, "RachunekBankowy"));
+function parseBankAccounts(platnosc: Record<string, unknown>, fieldName: string): BankAccount[] {
+  return toArray(findField(platnosc, fieldName))
+    .filter(isRecord)
+    .map(parseBankAccount);
+}
 
-  return rows
-    .map((row) => {
-      if (!isRecord(row)) return null;
+function parsePaymentTerms(platnosc: Record<string, unknown>): PaymentTerm[] {
+  return toArray(findField(platnosc, "TerminPlatnosci"))
+    .filter(isRecord)
+    .map((n) => {
+      const terminOpisNode = findFieldRecord(n, "TerminOpis");
+      let terminOpis: string | null = null;
+      if (terminOpisNode) {
+        const parts = [
+          findFieldString(terminOpisNode, "Ilosc"),
+          findFieldString(terminOpisNode, "Jednostka"),
+          findFieldString(terminOpisNode, "ZdarzeniePoczatkowe"),
+        ].filter((p): p is string => p != null && p.length > 0);
+        terminOpis = parts.length > 0 ? parts.join(" ") : null;
+      }
       return {
-        iban: findFieldString(row, "NrRB"),
-        swift: findFieldString(row, "SWIFT"),
-        bankName: findFieldString(row, "NazwaBanku"),
-        ownAccount: findField(row, "RachunekWlasnyBanku") === true,
-        description: findFieldString(row, "OpisRachunku"),
-      } satisfies BankAccount;
-    })
-    .filter((x): x is BankAccount => x !== null);
+        termin: findFieldString(n, "Termin"),
+        terminOpis,
+        kwota: findFieldNumber(n, "Kwota"),
+      } satisfies PaymentTerm;
+    });
+}
+
+function parseSkonto(
+  platnosc: Record<string, unknown>,
+): { warunki: string | null; wysokosc: string | null } | null {
+  const skontoNode = findFieldRecord(platnosc, "Skonto");
+  if (!skontoNode) return null;
+  return {
+    warunki: findFieldString(skontoNode, "WarunkiSkonta"),
+    wysokosc: findFieldString(skontoNode, "WysokoscSkonta"),
+  };
+}
+
+function parseZaplataCzesciowa(platnosc: Record<string, unknown>): PartialPayment[] {
+  return toArray(findField(platnosc, "ZaplataCzesciowa"))
+    .filter(isRecord)
+    .map((n) => ({
+      kwota: findFieldString(n, "KwotaZaplatyCzesciowej"),
+      data: findFieldString(n, "DataZaplatyCzesciowej"),
+      formaPlatnosci: findFieldString(n, "FormaPlatnosci"),
+      platnoscInna: findFieldString(n, "PlatnoscInna"),
+      opisPlatnosci: findFieldString(n, "OpisPlatnosci"),
+    }));
+}
+
+function parsePayment(platnosc: Record<string, unknown>): Payment {
+  return {
+    zaplacono: findFieldString(platnosc, "Zaplacono"),
+    dataZaplaty: findFieldString(platnosc, "DataZaplaty"),
+    znacznikZaplatyCzesciowej: findFieldString(platnosc, "ZnacznikZaplatyCzesciowej"),
+    formaPlatnosci: findFieldString(platnosc, "FormaPlatnosci"),
+    platnoscInna: findFieldString(platnosc, "PlatnoscInna"),
+    opisPlatnosci: findFieldString(platnosc, "OpisPlatnosci"),
+    linkDoPlatnosci: findFieldString(platnosc, "LinkDoPlatnosci"),
+    ipKSeF: findFieldString(platnosc, "IPKSeF"),
+    terminy: parsePaymentTerms(platnosc),
+    rachunkiBankowe: parseBankAccounts(platnosc, "RachunekBankowy"),
+    rachunkiBankoweFaktora: parseBankAccounts(platnosc, "RachunekBankowyFaktora"),
+    skonto: parseSkonto(platnosc),
+    zaplataCzesciowa: parseZaplataCzesciowa(platnosc),
+  };
 }
 
 function parseRegistries(podmiot1: Record<string, unknown>): RegistryEntry[] {
@@ -612,7 +673,6 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     taxSummary: parseTaxSummary(fa),
     additionalInfo: parseAdditionalInfo(fa),
     payment: platnosc ? parsePayment(platnosc) : null,
-    bankAccounts: platnosc ? parseBankAccounts(platnosc) : [],
     registries: parseRegistries(podmiot1),
     correctedInvoiceNumber,
     correctedInvoiceDate,

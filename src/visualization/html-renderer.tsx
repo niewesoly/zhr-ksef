@@ -157,28 +157,16 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
           <>
             <h2>Płatność</h2>
             <div class="card">
-              {invoice.payment.method ? <div>Forma: {invoice.payment.method}</div> : null}
-              {invoice.payment.dueDate ? <div>Termin: {invoice.payment.dueDate}</div> : null}
-              {invoice.payment.dueAmount != null ? (
-                <div>Kwota: {fmtMoney(invoice.payment.dueAmount, invoice.currency)}</div>
+              {invoice.payment.formaPlatnosci ? (
+                <div>Forma: {invoice.payment.formaPlatnosci}</div>
               ) : null}
-              {invoice.payment.info ? <div class="muted">{invoice.payment.info}</div> : null}
+              {invoice.payment.terminy[0]?.termin ? (
+                <div>Termin: {invoice.payment.terminy[0].termin}</div>
+              ) : null}
+              {invoice.payment.zaplacono ? (
+                <div class="muted">Zapłacono: {invoice.payment.zaplacono}</div>
+              ) : null}
             </div>
-          </>
-        ) : null}
-
-        {invoice.bankAccounts.length > 0 ? (
-          <>
-            <h2>Rachunki bankowe</h2>
-            <ul>
-              {invoice.bankAccounts.map((acct) => (
-                <li>
-                  {acct.iban ?? "—"}
-                  {acct.bankName ? ` — ${acct.bankName}` : ""}
-                  {acct.swift ? ` (SWIFT: ${acct.swift})` : ""}
-                </li>
-              ))}
-            </ul>
           </>
         ) : null}
 
