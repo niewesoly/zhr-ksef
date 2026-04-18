@@ -169,6 +169,60 @@ suite("html-renderer", () => {
     assert.match(html, /rel="noopener noreferrer"/);
   });
 
+  // C1: additionalInfo section
+  test("additionalInfo section renders key-value rows", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /Informacje dodatkowe/);
+    assert.match(html, /Numer zamówienia/);
+    assert.match(html, /Projekt/);
+  });
+
+  // C2: correctionReason section
+  test("correctionReason section renders when present", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Faktura xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/">
+  <Podmiot1>
+    <DaneIdentyfikacyjne>
+      <NIP>9876543210</NIP>
+      <Nazwa>Sprzedawca SP. Z O.O.</Nazwa>
+    </DaneIdentyfikacyjne>
+  </Podmiot1>
+  <Podmiot2>
+    <DaneIdentyfikacyjne>
+      <NIP>1234567890</NIP>
+      <Nazwa>Nabywca SP. Z O.O.</Nazwa>
+    </DaneIdentyfikacyjne>
+  </Podmiot2>
+  <Fa>
+    <P_1>2026-03-15</P_1>
+    <P_2>KOR/2026/03/001</P_2>
+    <RodzajFaktury>KOR</RodzajFaktury>
+    <KodWaluty>PLN</KodWaluty>
+    <P_13_1>100.00</P_13_1>
+    <P_15>123.00</P_15>
+    <PrzyczynaKorekty>Błąd w cenie</PrzyczynaKorekty>
+    <FaWiersz>
+      <P_7>Testowa usługa</P_7>
+      <P_11>100.00</P_11>
+      <P_12>23</P_12>
+    </FaWiersz>
+  </Fa>
+</Faktura>`;
+    const invKor = parseInvoiceFa3(xml, "KOR-TEST-001");
+    const html = renderInvoiceHtml(invKor);
+    assert.match(html, /Przyczyna korekty/);
+    assert.match(html, /Błąd w cenie/);
+  });
+
+  // C3: rozliczenie itemized lines
+  test("rozliczenie renders obciazenia and odliczenia line items", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /Koszt transportu/);
+    assert.match(html, /Rabat posprzedażowy/);
+    assert.match(html, /Obciążenia/);
+    assert.match(html, /Odliczenia/);
+  });
+
   // F2: Visual regression guard — all 11 sections present in extended fixture output
   test("regression guard: all 11 sections render for extended fixture", () => {
     const html = renderInvoiceHtml(inv);

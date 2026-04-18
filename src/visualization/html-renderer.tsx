@@ -1,5 +1,5 @@
 import type { FC } from "hono/jsx";
-import type { InvoiceFa3, InvoiceParty, Adnotacje, Rozliczenie } from "../ksef/parser.js";
+import type { InvoiceFa3, InvoiceParty, Adnotacje, Rozliczenie, AdditionalInfo } from "../ksef/parser.js";
 import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags, zaplacono, znacznikZaplatyCzesciowej, formaPlatnosci, rodzajTransportu, gtu } from "../ksef/dictionaries.js";
 import { fmtDate, fmtMoney, fmtQty, buildAdresLines } from "./format.js";
 
@@ -278,6 +278,19 @@ const Podmiot: FC<{ podmiot: InvoiceParty; role: PodmiotRole }> = ({ podmiot, ro
           {taxpayerStatus(podmiot.statusInfoPodatnika) ?? podmiot.statusInfoPodatnika}
         </div>
       ) : null}
+      {podmiot.daneRejestrowe ? (
+        <dl class="ksef-dl">
+          {podmiot.daneRejestrowe.nazwaPelna ? (
+            <><dt>Pełna nazwa</dt><dd>{podmiot.daneRejestrowe.nazwaPelna}</dd></>
+          ) : null}
+          {podmiot.daneRejestrowe.krs ? (
+            <><dt>KRS</dt><dd>{podmiot.daneRejestrowe.krs}</dd></>
+          ) : null}
+          {podmiot.daneRejestrowe.regon ? (
+            <><dt>REGON</dt><dd>{podmiot.daneRejestrowe.regon}</dd></>
+          ) : null}
+        </dl>
+      ) : null}
     </div>
   );
 };
@@ -536,6 +549,48 @@ const RozliczenieSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   return (
     <div class="ksef-section">
       <h3 class="ksef-section__title">Rozliczenie</h3>
+      {rozl.obciazenia.length > 0 ? (
+        <>
+          <h4>Obciążenia</h4>
+          <table class="ksef-table">
+            <thead>
+              <tr>
+                <th class="num">Kwota</th>
+                <th>Powód</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rozl.obciazenia.map((o, i) => (
+                <tr key={String(i)}>
+                  <td class="num">{fmtMoney(o.kwota, currency)}</td>
+                  <td>{o.powod ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      ) : null}
+      {rozl.odliczenia.length > 0 ? (
+        <>
+          <h4>Odliczenia</h4>
+          <table class="ksef-table">
+            <thead>
+              <tr>
+                <th class="num">Kwota</th>
+                <th>Powód</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rozl.odliczenia.map((o, i) => (
+                <tr key={String(i)}>
+                  <td class="num">{fmtMoney(o.kwota, currency)}</td>
+                  <td>{o.powod ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      ) : null}
       <dl class="ksef-dl ksef-dl--two-col">
         {rozl.sumaObciazen != null ? (
           <>
@@ -828,6 +883,44 @@ const StopkaSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   );
 };
 
+const CorrectionReasonSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  const reason = invoice.correctionReason ?? invoice.przyczynaKorekty;
+  if (!reason) return null;
+  return (
+    <div class="ksef-section">
+      <h3 class="ksef-section__title">Przyczyna korekty</h3>
+      <p class="ksef-note">{reason}</p>
+    </div>
+  );
+};
+
+const AdditionalInfoSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  if (invoice.additionalInfo.length === 0) return null;
+  return (
+    <div class="ksef-section">
+      <h3 class="ksef-section__title">Informacje dodatkowe</h3>
+      <table class="ksef-table">
+        <thead>
+          <tr>
+            <th class="num">Lp.</th>
+            <th>Klucz</th>
+            <th>Wartość</th>
+          </tr>
+        </thead>
+        <tbody>
+          {invoice.additionalInfo.map((row, i) => (
+            <tr key={String(i)}>
+              <td class="num">{row.lp}</td>
+              <td>{row.rodzaj}</td>
+              <td>{row.tresc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 export function renderInvoiceHtml(invoice: InvoiceFa3): string {
   const element = <InvoiceHtml invoice={invoice} />;
   // hono/jsx elements stringify directly; `toString()` produces the
@@ -850,6 +943,8 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
 
           <DaneFaKorygowanej invoice={invoice} />
 
+          <CorrectionReasonSection invoice={invoice} />
+
           <Podmioty invoice={invoice} />
 
           <Szczegoly invoice={invoice} />
@@ -867,6 +962,8 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
           <WarunkiTransakcjiSection invoice={invoice} />
 
           <StopkaSection invoice={invoice} />
+
+          <AdditionalInfoSection invoice={invoice} />
         </div>
       </body>
     </html>

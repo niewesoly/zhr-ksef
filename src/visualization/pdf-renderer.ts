@@ -422,6 +422,18 @@ function adnotacje(invoice: InvoiceFa3): ReactElement | null {
   );
 }
 
+// C2: CorrectionReason
+function correctionReason(invoice: InvoiceFa3): ReactElement | null {
+  const reason = invoice.correctionReason ?? invoice.przyczynaKorekty;
+  if (!reason) return null;
+  return h(
+    View,
+    { style: styles.section },
+    sectionTitle("Przyczyna korekty"),
+    h(Text, { style: { fontStyle: "italic", fontSize: 7 } }, reason),
+  );
+}
+
 // E10: Rozliczenie
 function rozliczenie(invoice: InvoiceFa3): ReactElement | null {
   const rozl = invoice.rozliczenie;
@@ -429,12 +441,97 @@ function rozliczenie(invoice: InvoiceFa3): ReactElement | null {
   const { sumaObciazen, sumaOdliczen, doZaplaty, doRozliczenia } = rozl;
   if (sumaObciazen == null && sumaOdliczen == null && doZaplaty == null && doRozliczenia == null) return null;
   const currency = invoice.currency;
+
+  const obciazeniaTable =
+    rozl.obciazenia.length > 0
+      ? h(
+          View,
+          { style: { marginBottom: 3 } },
+          h(Text, { style: styles.bankTitle }, "Obciążenia"),
+          h(
+            View,
+            { style: styles.table },
+            h(
+              View,
+              { style: styles.tableHeader },
+              h(Text, { style: [styles.cellNum, { width: "30%" }] }, "Kwota"),
+              h(Text, { style: [styles.cell, { width: "70%" }] }, "Powód"),
+            ),
+            ...rozl.obciazenia.map((o, i) =>
+              h(
+                View,
+                { key: String(i), style: styles.tableRow },
+                h(Text, { style: [styles.cellNum, { width: "30%" }] }, fmtMoney(o.kwota, currency)),
+                h(Text, { style: [styles.cell, { width: "70%" }] }, o.powod ?? "—"),
+              ),
+            ),
+          ),
+        )
+      : null;
+
+  const odliczeniaTable =
+    rozl.odliczenia.length > 0
+      ? h(
+          View,
+          { style: { marginBottom: 3 } },
+          h(Text, { style: styles.bankTitle }, "Odliczenia"),
+          h(
+            View,
+            { style: styles.table },
+            h(
+              View,
+              { style: styles.tableHeader },
+              h(Text, { style: [styles.cellNum, { width: "30%" }] }, "Kwota"),
+              h(Text, { style: [styles.cell, { width: "70%" }] }, "Powód"),
+            ),
+            ...rozl.odliczenia.map((o, i) =>
+              h(
+                View,
+                { key: String(i), style: styles.tableRow },
+                h(Text, { style: [styles.cellNum, { width: "30%" }] }, fmtMoney(o.kwota, currency)),
+                h(Text, { style: [styles.cell, { width: "70%" }] }, o.powod ?? "—"),
+              ),
+            ),
+          ),
+        )
+      : null;
+
   const rows: ReactElement[] = [];
   if (sumaObciazen != null) rows.push(dlRow("Suma obciążeń:", fmtMoney(sumaObciazen, currency), true));
   if (sumaOdliczen != null) rows.push(dlRow("Suma odliczeń:", fmtMoney(sumaOdliczen, currency), true));
   if (doZaplaty != null) rows.push(dlRow("Do zapłaty:", fmtMoney(doZaplaty, currency), true));
   if (doRozliczenia != null) rows.push(dlRow("Do rozliczenia:", fmtMoney(doRozliczenia, currency), true));
-  return h(View, { style: styles.section }, sectionTitle("Rozliczenie"), ...rows);
+  return h(View, { style: styles.section }, sectionTitle("Rozliczenie"), obciazeniaTable, odliczeniaTable, ...rows);
+}
+
+// C1: AdditionalInfo
+function additionalInfo(invoice: InvoiceFa3): ReactElement | null {
+  if (invoice.additionalInfo.length === 0) return null;
+  return h(
+    View,
+    { style: styles.section },
+    sectionTitle("Informacje dodatkowe"),
+    h(
+      View,
+      { style: styles.table },
+      h(
+        View,
+        { style: styles.tableHeader },
+        h(Text, { style: [styles.cell, { width: "8%" }] }, "Lp."),
+        h(Text, { style: [styles.cell, { width: "46%" }] }, "Klucz"),
+        h(Text, { style: [styles.cell, { width: "46%" }] }, "Wartość"),
+      ),
+      ...invoice.additionalInfo.map((row, i) =>
+        h(
+          View,
+          { key: String(i), style: styles.tableRow },
+          h(Text, { style: [styles.cell, { width: "8%" }] }, String(row.lp)),
+          h(Text, { style: [styles.cell, { width: "46%" }] }, row.rodzaj),
+          h(Text, { style: [styles.cell, { width: "46%" }] }, row.tresc),
+        ),
+      ),
+    ),
+  );
 }
 
 // E11: Platnosc
@@ -597,6 +694,7 @@ function buildDocument(invoice: InvoiceFa3): ReactElement<DocumentProps> {
       { size: "A4", style: styles.page },
       naglowek(invoice),
       daneFaKorygowanej(invoice),
+      correctionReason(invoice),
       podmioty(invoice),
       szczegoly(invoice),
       wiersze(invoice),
@@ -606,6 +704,7 @@ function buildDocument(invoice: InvoiceFa3): ReactElement<DocumentProps> {
       platnosc(invoice),
       warunkiTransakcji(invoice),
       stopka(invoice),
+      additionalInfo(invoice),
     ),
   ) as ReactElement<DocumentProps>;
 }
