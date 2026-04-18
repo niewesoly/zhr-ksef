@@ -35,4 +35,12 @@ suite("html-renderer", () => {
     assert.match(html, /ksef-podmiot__label.*NIP|NIP.*ksef-podmiot__label/);
     assert.match(html, /ksef-podmiot__row--name/);
   });
+
+  // D5: Podmioty side-by-side
+  test("podmioty renders sprzedawca and nabywca columns", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /ksef-podmioty/);
+    assert.match(html, /Sprzedawca/);
+    assert.match(html, /Nabywca/);
+  });
 });

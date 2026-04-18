@@ -1,6 +1,6 @@
 import type { FC } from "hono/jsx";
 import type { InvoiceFa3, InvoiceParty } from "../ksef/parser.js";
-import { rodzajFaktury, taxpayerStatus, kraj } from "../ksef/dictionaries.js";
+import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short } from "../ksef/dictionaries.js";
 
 // Renders a parsed FA(3) invoice to a fully self-contained HTML document.
 // Uses only inline `<style>` so the CSP `default-src 'none'` block does not
@@ -295,6 +295,44 @@ const Podmiot: FC<{ podmiot: InvoiceParty; role: PodmiotRole }> = ({ podmiot, ro
   );
 };
 
+interface PodmiotyCol {
+  title: string;
+  podmiot: InvoiceParty;
+  role: PodmiotRole;
+}
+
+const Podmioty: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  const cols: PodmiotyCol[] = [
+    { title: "Sprzedawca", podmiot: invoice.seller, role: "sprzedawca" },
+    { title: "Nabywca", podmiot: invoice.buyer, role: "nabywca" },
+  ];
+
+  invoice.odbiorcy.forEach((odb, idx) => {
+    const baseLabel = rolaPodmiotu3Short(odb.rolaPodmiotu3) ?? "Odbiorca";
+    const label = invoice.odbiorcy.length > 1 ? `${baseLabel} ${idx + 1}` : baseLabel;
+    cols.push({ title: label, podmiot: odb, role: "odbiorca" });
+  });
+
+  const colWidth = Math.round((100 / cols.length) * 100) / 100;
+
+  return (
+    <table class="ksef-podmioty">
+      <tr>
+        {cols.map((col) => (
+          <td
+            key={col.title}
+            class="ksef-podmioty__col"
+            style={`width: ${colWidth}%;`}
+          >
+            <h3 class="ksef-section__title">{col.title}</h3>
+            <Podmiot podmiot={col.podmiot} role={col.role} />
+          </td>
+        ))}
+      </tr>
+    </table>
+  );
+};
+
 const Naglowek: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   const rodzajLabel = rodzajFaktury(invoice.invoiceType, invoice.okresFaKorygowanej);
   return (
@@ -372,13 +410,7 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
 
         <DaneFaKorygowanej invoice={invoice} />
 
-        <div class="ksef-section">
-          <Podmiot podmiot={invoice.seller} role="sprzedawca" />
-          <Podmiot podmiot={invoice.buyer} role="nabywca" />
-          {invoice.odbiorcy.map((odb, i) => (
-            <Podmiot key={String(i)} podmiot={odb} role="odbiorca" />
-          ))}
-        </div>
+        <Podmioty invoice={invoice} />
 
         <h2>Pozycje</h2>
         <table>
