@@ -841,6 +841,7 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
         <meta charset="utf-8" />
         <title>{`Faktura ${invoice.invoiceNumber ?? invoice.ksefNumber}`}</title>
         <style>{STYLES}</style>
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'" />
       </head>
       <body>
         <Naglowek invoice={invoice} />

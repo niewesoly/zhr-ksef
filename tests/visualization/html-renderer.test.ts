@@ -109,4 +109,12 @@ suite("html-renderer", () => {
     assert.match(html, /ksef-section--stopka/);
     assert.match(html, /KRS:/);
   });
+
+  // D14: Final assembly smoke test
+  test("renderInvoiceHtml produces valid HTML document with CSP meta and outer wrapper", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.ok(html.startsWith("<!doctype html>"), "output must start with <!doctype html>");
+    assert.match(html, /Content-Security-Policy/, "CSP meta tag must be present");
+    assert.match(html, /ksef-invoice/, "outer wrapper class must be present");
+  });
 });
