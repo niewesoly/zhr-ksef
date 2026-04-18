@@ -1,5 +1,6 @@
 import type { FC } from "hono/jsx";
 import type { InvoiceFa3 } from "../ksef/parser.js";
+import { rodzajFaktury } from "../ksef/dictionaries.js";
 
 // Renders a parsed FA(3) invoice to a fully self-contained HTML document.
 // Uses only inline `<style>` so the CSP `default-src 'none'` block does not
@@ -236,6 +237,36 @@ const Party: FC<{ title: string; party: InvoiceFa3["seller"] | null }> = ({ titl
   );
 };
 
+const Naglowek: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  const rodzajLabel = rodzajFaktury(invoice.invoiceType, invoice.okresFaKorygowanej);
+  return (
+    <table class="ksef-naglowek">
+      <tr>
+        <td style="width: 50%; text-align: left;">
+          <div class="ksef-naglowek__brand">
+            Krajowy System <span class="ksef-naglowek__brand-e">e</span>-Faktur
+          </div>
+        </td>
+        <td style="width: 50%; text-align: right;">
+          <div class="ksef-naglowek__label">Numer faktury:</div>
+          <div class="ksef-naglowek__number">{invoice.invoiceNumber ?? "—"}</div>
+          <div class="ksef-naglowek__rodzaj">{rodzajLabel}</div>
+          {invoice.ksefNumber ? (
+            <div class="ksef-naglowek__ksef">
+              Numer KSeF: <strong>{invoice.ksefNumber}</strong>
+            </div>
+          ) : null}
+          {invoice.header?.dataWytworzeniaFa ? (
+            <div class="ksef-naglowek__wytw">
+              Wytworzono: {invoice.header.dataWytworzeniaFa}
+            </div>
+          ) : null}
+        </td>
+      </tr>
+    </table>
+  );
+};
+
 export function renderInvoiceHtml(invoice: InvoiceFa3): string {
   const element = <InvoiceHtml invoice={invoice} />;
   // hono/jsx elements stringify directly; `toString()` produces the
@@ -252,13 +283,7 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
         <style>{STYLES}</style>
       </head>
       <body>
-        <h1>{invoice.invoiceTypeLabel}</h1>
-        <div class="muted">Numer: <strong>{invoice.invoiceNumber ?? "—"}</strong></div>
-        <div class="muted">KSeF: {invoice.ksefNumber}</div>
-        <div class="muted">Data wystawienia: {invoice.issueDate ?? "—"}</div>
-        {invoice.placeOfIssue ? (
-          <div class="muted">Miejsce wystawienia: {invoice.placeOfIssue}</div>
-        ) : null}
+        <Naglowek invoice={invoice} />
 
         <div class="grid" style="margin-top: 1rem;">
           <Party title="Sprzedawca" party={invoice.seller} />
