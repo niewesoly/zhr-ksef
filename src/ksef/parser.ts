@@ -83,8 +83,17 @@ export interface RegistryEntry {
   regon: string | null;
 }
 
+export interface InvoiceHeader {
+  kodSystemowy: string | null;
+  wersjaSchemy: string | null;
+  wariantFormularza: string | null;
+  dataWytworzeniaFa: string | null;
+  systemInfo: string | null;
+}
+
 export interface InvoiceFa3 {
   ksefNumber: string;
+  header: InvoiceHeader;
   invoiceNumber: string | null;
   invoiceType: string | null;
   invoiceTypeLabel: string;
@@ -333,6 +342,35 @@ function parseRegistries(podmiot1: Record<string, unknown>): RegistryEntry[] {
   return [{ pelnaNazwa, krs, regon }];
 }
 
+function parseHeader(faktura: Record<string, unknown>): InvoiceHeader {
+  const naglowek = findFieldRecord(faktura, "Naglowek");
+  if (!naglowek) {
+    return {
+      kodSystemowy: null,
+      wersjaSchemy: null,
+      wariantFormularza: null,
+      dataWytworzeniaFa: null,
+      systemInfo: null,
+    };
+  }
+
+  const kodFormularza = findFieldRecord(naglowek, "KodFormularza");
+  const kodSystemowy = kodFormularza
+    ? findFieldString(kodFormularza, "@_kodSystemowy")
+    : null;
+  const wersjaSchemy = kodFormularza
+    ? findFieldString(kodFormularza, "@_wersjaSchemy")
+    : null;
+
+  return {
+    kodSystemowy,
+    wersjaSchemy,
+    wariantFormularza: findFieldString(naglowek, "WariantFormularza"),
+    dataWytworzeniaFa: findFieldString(naglowek, "DataWytworzeniaFa"),
+    systemInfo: findFieldString(naglowek, "SystemInfo"),
+  };
+}
+
 export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
   if (Buffer.byteLength(xml, "utf8") > MAX_INVOICE_XML_BYTES) {
     throw new Error(
@@ -371,6 +409,7 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
 
   return {
     ksefNumber,
+    header: parseHeader(faktura),
     invoiceNumber: findFieldString(fa, "P_2"),
     invoiceType,
     invoiceTypeLabel,
