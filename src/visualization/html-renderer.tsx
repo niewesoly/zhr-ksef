@@ -1,6 +1,6 @@
 import type { FC } from "hono/jsx";
 import type { InvoiceFa3, InvoiceParty, Adnotacje, Rozliczenie } from "../ksef/parser.js";
-import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags, zaplacono, znacznikZaplatyCzesciowej, formaPlatnosci } from "../ksef/dictionaries.js";
+import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags, zaplacono, znacznikZaplatyCzesciowej, formaPlatnosci, rodzajTransportu } from "../ksef/dictionaries.js";
 import type { AdnotacjeInput } from "../ksef/dictionaries.js";
 
 // Renders a parsed FA(3) invoice to a fully self-contained HTML document.
@@ -718,6 +718,94 @@ const Platnosc: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   );
 };
 
+const WarunkiTransakcjiSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  const wt = invoice.warunkiTransakcji;
+  if (!wt) return null;
+
+  return (
+    <div class="ksef-section">
+      <h3 class="ksef-section__title">Warunki transakcji</h3>
+      <dl class="ksef-dl ksef-dl--two-col">
+        {wt.warunkiDostawy !== null ? (
+          <>
+            <dt>Warunki dostawy</dt>
+            <dd>{wt.warunkiDostawy}</dd>
+          </>
+        ) : null}
+        {wt.kursUmowny !== null ? (
+          <>
+            <dt>Kurs umowny</dt>
+            <dd>{wt.kursUmowny}</dd>
+          </>
+        ) : null}
+        {wt.walutaUmowna !== null ? (
+          <>
+            <dt>Waluta umowna</dt>
+            <dd>{wt.walutaUmowna}</dd>
+          </>
+        ) : null}
+        {wt.podmiotPosredniczacy !== null ? (
+          <>
+            <dt>Podmiot pośredniczący</dt>
+            <dd>{wt.podmiotPosredniczacy}</dd>
+          </>
+        ) : null}
+        {wt.rodzajTransportu !== null ? (
+          <>
+            <dt>Rodzaj transportu</dt>
+            <dd>{rodzajTransportu(wt.rodzajTransportu)}</dd>
+          </>
+        ) : null}
+        {wt.numerSrodkaTransportu !== null ? (
+          <>
+            <dt>Numer środka transportu</dt>
+            <dd>{wt.numerSrodkaTransportu}</dd>
+          </>
+        ) : null}
+      </dl>
+
+      {wt.umowy.length > 0 ? (
+        <>
+          <h4>Umowy</h4>
+          <ul class="ksef-list">
+            {wt.umowy.map((u, i) => {
+              const parts = [u.numer, u.data ? `(${fmtDate(u.data)})` : null].filter(
+                (p): p is string => p !== null,
+              );
+              return <li key={String(i)}>{parts.join(" ")}</li>;
+            })}
+          </ul>
+        </>
+      ) : null}
+
+      {wt.zamowienia.length > 0 ? (
+        <>
+          <h4>Zamówienia</h4>
+          <ul class="ksef-list">
+            {wt.zamowienia.map((z, i) => {
+              const parts = [z.numer, z.data ? `(${fmtDate(z.data)})` : null].filter(
+                (p): p is string => p !== null,
+              );
+              return <li key={String(i)}>{parts.join(" ")}</li>;
+            })}
+          </ul>
+        </>
+      ) : null}
+
+      {wt.nrPartiiTowaru.length > 0 ? (
+        <>
+          <h4>Nr partii towaru</h4>
+          <ul class="ksef-list">
+            {wt.nrPartiiTowaru.map((nr, i) => (
+              <li key={String(i)}>{nr}</li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+    </div>
+  );
+};
+
 export function renderInvoiceHtml(invoice: InvoiceFa3): string {
   const element = <InvoiceHtml invoice={invoice} />;
   // hono/jsx elements stringify directly; `toString()` produces the
@@ -751,6 +839,8 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
         <RozliczenieSection invoice={invoice} />
 
         <Platnosc invoice={invoice} />
+
+        <WarunkiTransakcjiSection invoice={invoice} />
       </body>
     </html>
   );

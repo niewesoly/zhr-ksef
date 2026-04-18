@@ -95,4 +95,11 @@ suite("html-renderer", () => {
     assert.match(html, /Skonto/);
     assert.match(html, /Data zapłaty częściowej/);
   });
+
+  // D12: WarunkiTransakcji section
+  test("warunkiTransakcji renders section title and Umowy list", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /Warunki transakcji/);
+    assert.match(html, /Umowy/);
+  });
 });
