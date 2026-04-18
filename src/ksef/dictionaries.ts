@@ -544,10 +544,30 @@ export interface AdnotacjeInput {
   };
 }
 
+// Structural type covering what adnotacjeFlags actually accesses.
+// Both AdnotacjeInput and the parser's Adnotacje type satisfy this interface,
+// so no unsafe casts are needed at call sites.
+interface AdnotacjeForFlags {
+  p16: string | null;
+  p17: string | null;
+  p18: string | null;
+  p18a: string | null;
+  p23: string | null;
+  zwolnienie: { p19?: string | null };
+  noweSrodkiTransportu: { p42_5?: string | null };
+  pmarzy: {
+    pPMarzy?: string | null;
+    pPMarzy_2?: string | null;
+    pPMarzy_3_1?: string | null;
+    pPMarzy_3_2?: string | null;
+    pPMarzy_3_3?: string | null;
+  };
+}
+
 // Adnotacje flags → human labels.
 // Returns an array of strings for every flag set to "1". The ordering of
 // emitted flags mirrors `dictionaries.rb:292-326` (ziher) — do not reorder.
-export function adnotacjeFlags(adn: AdnotacjeInput | null): string[] {
+export function adnotacjeFlags(adn: AdnotacjeForFlags | null): string[] {
   if (adn === null || adn === undefined) return [];
 
   const result: string[] = [];

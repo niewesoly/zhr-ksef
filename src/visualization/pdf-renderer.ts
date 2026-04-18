@@ -38,7 +38,6 @@ import {
   rodzajTransportu,
   gtu,
 } from "../ksef/dictionaries.js";
-import type { AdnotacjeInput } from "../ksef/dictionaries.js";
 
 // Server-side PDF rendering. Avoiding JSX in this file keeps the TS
 // jsx config (`hono/jsx`) from pulling in Hono's JSX factory — React's
@@ -344,7 +343,7 @@ function podsumowanieStawek(invoice: InvoiceFa3): ReactElement | null {
 // E9: Adnotacje flags list
 function adnotacje(invoice: InvoiceFa3): ReactElement | null {
   if (!invoice.adnotacje) return null;
-  const flags = adnotacjeFlags(invoice.adnotacje as AdnotacjeInput);
+  const flags = adnotacjeFlags(invoice.adnotacje);
   if (flags.length === 0) return null;
   return h(
     View,

@@ -1,7 +1,6 @@
 import type { FC } from "hono/jsx";
 import type { InvoiceFa3, InvoiceParty, Adnotacje, Rozliczenie } from "../ksef/parser.js";
 import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags, zaplacono, znacznikZaplatyCzesciowej, formaPlatnosci, rodzajTransportu, gtu } from "../ksef/dictionaries.js";
-import type { AdnotacjeInput } from "../ksef/dictionaries.js";
 import { fmtDate, fmtMoney, fmtQty, buildAdresLines } from "./format.js";
 
 // Renders a parsed FA(3) invoice to a fully self-contained HTML document.
@@ -332,7 +331,7 @@ const Naglowek: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
               Numer KSeF: <strong>{invoice.ksefNumber}</strong>
             </div>
           ) : null}
-          {invoice.header?.dataWytworzeniaFa ? (
+          {invoice.header.dataWytworzeniaFa ? (
             <div class="ksef-naglowek__wytw">
               Wytworzono: {invoice.header.dataWytworzeniaFa}
             </div>
@@ -475,7 +474,7 @@ const Wiersze: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
 };
 
 const Adnotacje: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
-  const flags = adnotacjeFlags(invoice.adnotacje as AdnotacjeInput | null);
+  const flags = adnotacjeFlags(invoice.adnotacje);
   if (flags.length === 0) return null;
   return (
     <div class="ksef-section">
