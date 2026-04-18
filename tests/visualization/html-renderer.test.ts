@@ -80,6 +80,6 @@ suite("html-renderer", () => {
   test("rozliczenie renders section title and Suma obciążeń when present", () => {
     const html = renderInvoiceHtml(inv);
     assert.match(html, /Rozliczenie/);
-    assert.match(html, /Suma obci/);
+    assert.match(html, /Suma obciążeń/);
   });
 });
