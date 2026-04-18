@@ -122,7 +122,7 @@ export interface InvoiceFa3 {
   placeOfIssue: string | null;
   seller: InvoiceParty;
   buyer: InvoiceParty;
-  receiver: InvoiceParty | null;
+  odbiorcy: InvoiceParty[];
   lineItems: InvoiceLineItem[];
   totalGross: number | null;
   taxSummary: TaxSummaryRow[];
@@ -441,7 +441,6 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
 
   const podmiot1 = findFieldRecord(faktura, "Podmiot1") ?? {};
   const podmiot2 = findFieldRecord(faktura, "Podmiot2") ?? {};
-  const podmiot3 = findFieldRecord(faktura, "Podmiot3");
 
   const invoiceType = findFieldString(fa, "RodzajFaktury");
   const invoiceTypeLabel = (invoiceType ? (INVOICE_TYPE_LABEL[invoiceType] ?? invoiceType) : null) ?? "Faktura";
@@ -471,7 +470,9 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     placeOfIssue: findFieldString(fa, "MiejsceWystawienia"),
     seller: parseParty(podmiot1, "sprzedawca"),
     buyer: parseParty(podmiot2, "nabywca"),
-    receiver: podmiot3 ? parseParty(podmiot3, "podmiot3") : null,
+    odbiorcy: toArray(findField(faktura, "Podmiot3"))
+      .filter(isRecord)
+      .map((p) => parseParty(p, "podmiot3")),
     lineItems: parseLineItems(fa),
     totalGross: findFieldNumber(fa, "P_15"),
     taxSummary: parseTaxSummary(fa),

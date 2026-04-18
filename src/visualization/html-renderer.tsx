@@ -88,9 +88,9 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
           <Party title="Sprzedawca" party={invoice.seller} />
           <Party title="Nabywca" party={invoice.buyer} />
         </div>
-        {invoice.receiver ? (
+        {invoice.odbiorcy.length > 0 ? (
           <div class="grid">
-            <Party title="Odbiorca" party={invoice.receiver} />
+            <Party title="Odbiorca" party={invoice.odbiorcy[0]} />
           </div>
         ) : null}
 

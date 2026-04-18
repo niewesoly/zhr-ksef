@@ -29,3 +29,12 @@ suite("parseInvoiceFa3: podmiot extended", () => {
     assert.ok(inv.buyer.adresKoresp);
   });
 });
+
+suite("parseInvoiceFa3: odbiorcy", () => {
+  test("collects all Podmiot3 entries with roles", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.equal(inv.odbiorcy.length, 2);
+    assert.equal(inv.odbiorcy[0].rolaPodmiotu3, "1");
+    assert.equal(inv.odbiorcy[1].rolaPodmiotu3, "2");
+  });
+});
