@@ -117,4 +117,31 @@ suite("html-renderer", () => {
     assert.match(html, /Content-Security-Policy/, "CSP meta tag must be present");
     assert.match(html, /class="ksef-invoice"/, "outer wrapper element must be present");
   });
+
+  // F2: Visual regression guard — all 11 sections present in extended fixture output
+  test("regression guard: all 11 sections render for extended fixture", () => {
+    const html = renderInvoiceHtml(inv);
+    // Naglowek
+    assert.match(html, /ksef-naglowek/);
+    // DaneFaKorygowanej
+    assert.match(html, /Dane faktury korygowanej/);
+    // Podmioty
+    assert.match(html, /ksef-podmioty/);
+    // Szczegoly
+    assert.match(html, /Szczegóły/);
+    // Wiersze
+    assert.match(html, /ksef-table--wiersze/);
+    // PodsumowanieStawek
+    assert.match(html, /Podsumowanie stawek podatku/);
+    // Adnotacje
+    assert.match(html, /Adnotacje/);
+    // Rozliczenie
+    assert.match(html, /Rozliczenie/);
+    // Platnosc
+    assert.match(html, /Płatność/);
+    // WarunkiTransakcji
+    assert.match(html, /Warunki transakcji/);
+    // Stopka
+    assert.match(html, /ksef-section--stopka/);
+  });
 });
