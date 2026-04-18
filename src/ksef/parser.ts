@@ -408,11 +408,23 @@ function parseParty(podmiot: Record<string, unknown>, _role: PartyRole): Invoice
   };
 }
 
+function computeBrutto(netto: number | null, stawka: string | null): number | null {
+  if (netto == null || stawka == null) return null;
+  const rate = parseFloat(stawka);
+  if (!isFinite(rate) || rate < 0) return null;
+  return Math.round(netto * (1 + rate / 100) * 100) / 100;
+}
+
 function parseLineItems(fa: Record<string, unknown>): InvoiceLineItem[] {
   const rows = toArray(findField(fa, "FaWiersz"));
 
   return rows.map((row, idx) => {
     if (!isRecord(row)) return null;
+    const wartoscNetto = findFieldNumber(row, "P_11");
+    const stawkaPodatku = findFieldString(row, "P_12");
+    const wartoscBrutto =
+      findFieldNumber(row, "P_11A") ??
+      computeBrutto(wartoscNetto, stawkaPodatku);
     return {
       lp: findFieldNumber(row, "NrWierszaFa") ?? idx + 1,
       uuid: findFieldString(row, "NrWierszaFa"),
@@ -422,9 +434,9 @@ function parseLineItems(fa: Record<string, unknown>): InvoiceLineItem[] {
       ilosc: findFieldNumber(row, "P_8B"),
       miara: findFieldString(row, "P_8A"),
       rabat: findFieldNumber(row, "P_10"),
-      stawkaPodatku: findFieldString(row, "P_12"),
-      wartoscNetto: findFieldNumber(row, "P_11"),
-      wartoscBrutto: findFieldNumber(row, "P_11A"),
+      stawkaPodatku,
+      wartoscNetto,
+      wartoscBrutto,
       gtin: findFieldString(row, "GTIN"),
       pkwiU: findFieldString(row, "PKWiU"),
       cn: findFieldString(row, "CN"),
