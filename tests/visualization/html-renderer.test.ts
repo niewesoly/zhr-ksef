@@ -102,4 +102,11 @@ suite("html-renderer", () => {
     assert.match(html, /Warunki transakcji/);
     assert.match(html, /Umowy/);
   });
+
+  // D13: Stopka section
+  test("stopka renders ksef-section--stopka with informacje and KRS registry entry", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /ksef-section--stopka/);
+    assert.match(html, /KRS:/);
+  });
 });

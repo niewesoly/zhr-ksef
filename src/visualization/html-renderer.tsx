@@ -806,6 +806,27 @@ const WarunkiTransakcjiSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   );
 };
 
+const StopkaSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  const stopka = invoice.stopka;
+  if (!stopka) return null;
+  const { informacje, rejestry } = stopka;
+  if (informacje.length === 0 && rejestry.length === 0) return null;
+  return (
+    <div class="ksef-section ksef-section--stopka">
+      {informacje.map((line, i) => (
+        <p key={String(i)}>{line}</p>
+      ))}
+      {rejestry.map((r, i) => {
+        const parts: string[] = [];
+        if (r.krs !== null) parts.push(`KRS: ${r.krs}`);
+        if (r.regon !== null) parts.push(`REGON: ${r.regon}`);
+        if (r.bdo !== null) parts.push(`BDO: ${r.bdo}`);
+        return <p key={String(i)}>{parts.join(" · ")}</p>;
+      })}
+    </div>
+  );
+};
+
 export function renderInvoiceHtml(invoice: InvoiceFa3): string {
   const element = <InvoiceHtml invoice={invoice} />;
   // hono/jsx elements stringify directly; `toString()` produces the
@@ -841,6 +862,8 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
         <Platnosc invoice={invoice} />
 
         <WarunkiTransakcjiSection invoice={invoice} />
+
+        <StopkaSection invoice={invoice} />
       </body>
     </html>
   );
