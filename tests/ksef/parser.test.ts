@@ -260,3 +260,25 @@ suite("parseInvoiceFa3: stopka", () => {
     assert.equal(inv.stopka, null);
   });
 });
+
+suite("parseInvoiceFa3: full fixture", () => {
+  test("sample_fa3_full.xml round-trips without throwing", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_full.xml"), "K");
+    assert.ok(inv.header);
+    assert.ok(inv.seller);
+    assert.ok(inv.buyer);
+    assert.ok(Array.isArray(inv.lineItems));
+    assert.ok(Array.isArray(inv.odbiorcy));
+  });
+
+  test("sample_fa3_extended.xml exposes every new section", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.adnotacje);
+    assert.ok(inv.rozliczenie);
+    assert.ok(inv.warunkiTransakcji);
+    assert.ok(inv.stopka);
+    assert.ok(inv.payment);
+    assert.ok(inv.payment!.rachunkiBankoweFaktora.length > 0);
+    assert.ok(inv.daneFaKorygowanej.length === 2);
+  });
+});
