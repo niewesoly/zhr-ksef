@@ -28,4 +28,11 @@ suite("html-renderer", () => {
     const html = renderInvoiceHtml(invSimple);
     assert.doesNotMatch(html, /Dane faktury korygowanej/);
   });
+
+  // D4: Podmiot component
+  test("podmiot renders NIP + nazwa", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /ksef-podmiot__label.*NIP|NIP.*ksef-podmiot__label/);
+    assert.match(html, /ksef-podmiot__row--name/);
+  });
 });

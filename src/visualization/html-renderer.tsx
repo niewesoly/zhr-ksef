@@ -1,6 +1,6 @@
 import type { FC } from "hono/jsx";
-import type { InvoiceFa3 } from "../ksef/parser.js";
-import { rodzajFaktury } from "../ksef/dictionaries.js";
+import type { InvoiceFa3, InvoiceParty } from "../ksef/parser.js";
+import { rodzajFaktury, taxpayerStatus, kraj } from "../ksef/dictionaries.js";
 
 // Renders a parsed FA(3) invoice to a fully self-contained HTML document.
 // Uses only inline `<style>` so the CSP `default-src 'none'` block does not
@@ -215,30 +215,81 @@ function fmtQty(n: number | null): string {
   return Number.isInteger(n) ? String(n) : n.toString();
 }
 
-const Address: FC<{ addr: InvoiceFa3["seller"]["adres"] }> = ({ addr }) => {
-  if (!addr) return null;
-  return (
-    <>
-      {addr.adresL1 ? <div>{addr.adresL1}</div> : null}
-      {addr.adresL2 ? <div>{addr.adresL2}</div> : null}
-      {addr.kodKraju ? <div class="muted">{addr.kodKraju}</div> : null}
-    </>
-  );
-};
+function buildAdresLines(addr: { adresL1: string | null; adresL2: string | null; kodKraju: string | null } | null): string[] {
+  if (!addr) return [];
+  const lines: (string | null)[] = [addr.adresL1, addr.adresL2, kraj(addr.kodKraju)];
+  return lines.filter((l): l is string => l !== null && l.trim() !== "");
+}
 
-const Party: FC<{ title: string; party: InvoiceFa3["seller"] | null }> = ({ title, party }) => {
-  if (!party) return null;
+type PodmiotRole = "sprzedawca" | "nabywca" | "odbiorca";
+
+const Podmiot: FC<{ podmiot: InvoiceParty; role: PodmiotRole }> = ({ podmiot, role }) => {
+  const nipParts = [podmiot.prefiksPodatnika, podmiot.nip].filter(
+    (p): p is string => p !== null && p.trim() !== "",
+  );
+  const adresLines = buildAdresLines(podmiot.adres);
+  const adresKorespLines = buildAdresLines(podmiot.adresKoresp);
+
   return (
-    <div class="card">
-      <h2>{title}</h2>
-      {party.nazwa ? <div><strong>{party.nazwa}</strong></div> : null}
-      {party.nip ? <div>NIP: {party.nip}</div> : null}
-      <Address addr={party.adres} />
-      {party.daneKontaktowe[0]?.email ? (
-        <div class="muted">{party.daneKontaktowe[0].email}</div>
+    <div class="ksef-podmiot">
+      {nipParts.length > 0 ? (
+        <div class="ksef-podmiot__row">
+          <span class="ksef-podmiot__label">NIP:</span> {nipParts.join(" ")}
+        </div>
       ) : null}
-      {party.daneKontaktowe[0]?.telefon ? (
-        <div class="muted">{party.daneKontaktowe[0].telefon}</div>
+      {podmiot.nrEORI && podmiot.nrEORI.trim() !== "" ? (
+        <div class="ksef-podmiot__row">
+          <span class="ksef-podmiot__label">EORI:</span> {podmiot.nrEORI}
+        </div>
+      ) : null}
+      {podmiot.nazwa && podmiot.nazwa.trim() !== "" ? (
+        <div class="ksef-podmiot__row ksef-podmiot__row--name">{podmiot.nazwa}</div>
+      ) : null}
+      {adresLines.map((line, i) => (
+        <div key={String(i)} class="ksef-podmiot__row">{line}</div>
+      ))}
+      {adresKorespLines.length > 0 ? (
+        <>
+          <div class="ksef-podmiot__row ksef-podmiot__label">Adres korespondencyjny:</div>
+          {adresKorespLines.map((line, i) => (
+            <div key={String(i)} class="ksef-podmiot__row">{line}</div>
+          ))}
+        </>
+      ) : null}
+      {podmiot.daneKontaktowe.map((entry, i) => {
+        const email = entry.email && entry.email.trim() !== "" ? entry.email : "";
+        const telefon = entry.telefon && entry.telefon.trim() !== "" ? entry.telefon : "";
+        if (!email && !telefon) return null;
+        const text = email && telefon ? `${email} · ${telefon}` : email || telefon;
+        return (
+          <div key={String(i)} class="ksef-podmiot__row">{text}</div>
+        );
+      })}
+      {role === "nabywca" && podmiot.nrKlienta && podmiot.nrKlienta.trim() !== "" ? (
+        <div class="ksef-podmiot__row">
+          <span class="ksef-podmiot__label">Nr klienta:</span> {podmiot.nrKlienta}
+        </div>
+      ) : null}
+      {role === "nabywca" && podmiot.idNabywcy && podmiot.idNabywcy.trim() !== "" ? (
+        <div class="ksef-podmiot__row">
+          <span class="ksef-podmiot__label">ID nabywcy:</span> {podmiot.idNabywcy}
+        </div>
+      ) : null}
+      {role === "nabywca" && podmiot.jst ? (
+        <div class="ksef-podmiot__row">
+          <span class="ksef-podmiot__label">JST:</span> TAK
+        </div>
+      ) : null}
+      {role === "nabywca" && podmiot.gv ? (
+        <div class="ksef-podmiot__row">
+          <span class="ksef-podmiot__label">Grupa VAT:</span> TAK
+        </div>
+      ) : null}
+      {role === "sprzedawca" && podmiot.statusInfoPodatnika && podmiot.statusInfoPodatnika.trim() !== "" ? (
+        <div class="ksef-podmiot__row">
+          <span class="ksef-podmiot__label">Status podatnika:</span>{" "}
+          {taxpayerStatus(podmiot.statusInfoPodatnika) ?? podmiot.statusInfoPodatnika}
+        </div>
       ) : null}
     </div>
   );
@@ -321,15 +372,13 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
 
         <DaneFaKorygowanej invoice={invoice} />
 
-        <div class="grid" style="margin-top: 1rem;">
-          <Party title="Sprzedawca" party={invoice.seller} />
-          <Party title="Nabywca" party={invoice.buyer} />
+        <div class="ksef-section">
+          <Podmiot podmiot={invoice.seller} role="sprzedawca" />
+          <Podmiot podmiot={invoice.buyer} role="nabywca" />
+          {invoice.odbiorcy.map((odb, i) => (
+            <Podmiot key={String(i)} podmiot={odb} role="odbiorca" />
+          ))}
         </div>
-        {invoice.odbiorcy.length > 0 ? (
-          <div class="grid">
-            <Party title="Odbiorca" party={invoice.odbiorcy[0]} />
-          </div>
-        ) : null}
 
         <h2>Pozycje</h2>
         <table>
