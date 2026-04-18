@@ -1,5 +1,5 @@
 import type { FC } from "hono/jsx";
-import type { InvoiceFa3, InvoiceParty, Adnotacje } from "../ksef/parser.js";
+import type { InvoiceFa3, InvoiceParty, Adnotacje, Rozliczenie } from "../ksef/parser.js";
 import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags } from "../ksef/dictionaries.js";
 import type { AdnotacjeInput } from "../ksef/dictionaries.js";
 
@@ -534,6 +534,44 @@ const PodsumowanieStawek: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   );
 };
 
+const RozliczenieSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  const rozl: Rozliczenie | null = invoice.rozliczenie;
+  if (!rozl) return null;
+  if (rozl.sumaObciazen == null && rozl.sumaOdliczen == null && rozl.doZaplaty == null && rozl.doRozliczenia == null) return null;
+  const currency = invoice.currency;
+  return (
+    <div class="ksef-section">
+      <h3 class="ksef-section__title">Rozliczenie</h3>
+      <dl class="ksef-dl ksef-dl--two-col">
+        {rozl.sumaObciazen != null ? (
+          <>
+            <dt>Suma obciążeń</dt>
+            <dd>{fmtMoney(rozl.sumaObciazen, currency)}</dd>
+          </>
+        ) : null}
+        {rozl.sumaOdliczen != null ? (
+          <>
+            <dt>Suma odliczeń</dt>
+            <dd>{fmtMoney(rozl.sumaOdliczen, currency)}</dd>
+          </>
+        ) : null}
+        {rozl.doZaplaty != null ? (
+          <>
+            <dt>Do zapłaty</dt>
+            <dd>{fmtMoney(rozl.doZaplaty, currency)}</dd>
+          </>
+        ) : null}
+        {rozl.doRozliczenia != null ? (
+          <>
+            <dt>Do rozliczenia</dt>
+            <dd>{fmtMoney(rozl.doRozliczenia, currency)}</dd>
+          </>
+        ) : null}
+      </dl>
+    </div>
+  );
+};
+
 export function renderInvoiceHtml(invoice: InvoiceFa3): string {
   const element = <InvoiceHtml invoice={invoice} />;
   // hono/jsx elements stringify directly; `toString()` produces the
@@ -563,6 +601,8 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
         <PodsumowanieStawek invoice={invoice} />
 
         <Adnotacje invoice={invoice} />
+
+        <RozliczenieSection invoice={invoice} />
 
         {invoice.payment ? (
           <>

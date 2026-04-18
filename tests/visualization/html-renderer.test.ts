@@ -75,4 +75,11 @@ suite("html-renderer", () => {
     assert.match(html, /Adnotacje/);
     assert.match(html, /ksef-list/);
   });
+
+  // D10: Rozliczenie section
+  test("rozliczenie renders section title and Suma obciążeń when present", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /Rozliczenie/);
+    assert.match(html, /Suma obci/);
+  });
 });
