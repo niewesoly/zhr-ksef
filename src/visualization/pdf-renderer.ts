@@ -265,12 +265,8 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
   const currency = invoice.currency;
   const brutto = invoice.bruttoMode;
   const hasGtu = invoice.lineItems.some((r) => r.gtu != null);
-  // Column widths must always sum to 100%.
-  // netto mode: Lp(4) + Nazwa(28/36) + Ilość(8) + Miara(7) + Cena(13) + Stawka(8) + Netto(12) + Brutto(12) [+ GTU(8)] = 100%
-  // brutto mode: same columns but no second-value column → absorb its 12% into Nazwa
-  const nazwaSz = hasGtu
-    ? (brutto ? "40%" : "28%")
-    : (brutto ? "48%" : "36%");
+  // Lp(4) + Nazwa(28/36) + Ilość(8) + Miara(7) + Cena(13) + Stawka(8) + Wartość netto(12) + Wartość brutto(12) [+ GTU(8)] = 100%
+  const nazwaSz = hasGtu ? "28%" : "36%";
   return h(
     View,
     { style: styles.section },
@@ -289,10 +285,8 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
           ? h(Text, { style: [styles.cellNum, { width: "13%" }] }, "Cena brutto")
           : h(Text, { style: [styles.cellNum, { width: "13%" }] }, "Cena netto"),
         h(Text, { style: [styles.cell, { width: "8%" }] }, "Stawka"),
-        brutto
-          ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość brutto")
-          : h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość netto"),
-        !brutto ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość brutto") : null,
+        h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość netto"),
+        h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość brutto"),
         hasGtu ? h(Text, { style: [styles.cell, { width: "8%" }] }, "GTU") : null,
       ),
       ...invoice.lineItems.map((item, i) => {
@@ -312,10 +306,8 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
             ? h(Text, { style: [styles.cellNum, { width: "13%" }] }, fmtMoney(item.cenaJednBrutto ?? null, currency))
             : h(Text, { style: [styles.cellNum, { width: "13%" }] }, fmtMoney(item.cenaJednNetto, currency)),
           h(Text, { style: [styles.cell, { width: "8%" }] }, stawkaPodatku(item.stawkaPodatku ?? null)),
-          brutto
-            ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscBrutto ?? null, currency))
-            : h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscNetto, currency)),
-          !brutto ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscBrutto ?? null, currency)) : null,
+          h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscNetto, currency)),
+          h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscBrutto ?? null, currency)),
           hasGtu ? h(Text, { style: [styles.cell, { width: "8%" }] }, item.gtu ? (gtu(item.gtu) ?? item.gtu) : "—") : null,
         );
       }),
