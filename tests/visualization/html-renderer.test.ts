@@ -60,4 +60,19 @@ suite("html-renderer", () => {
     assert.match(html, /ksef-table--wiersze/);
     assert.match(html, /Kwota należności ogółem/);
   });
+
+  // D8: PodsumowanieStawek table
+  test("podsumowanie stawek renders tax summary table", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /Podsumowanie stawek podatku/);
+    assert.match(html, /ksef-table--stawki/);
+    assert.match(html, /Kwota podatku/);
+  });
+
+  // D9: Adnotacje flags list
+  test("adnotacje renders flag list when flags are present", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /Adnotacje/);
+    assert.match(html, /ksef-list/);
+  });
 });

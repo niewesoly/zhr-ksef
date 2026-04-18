@@ -1,6 +1,7 @@
 import type { FC } from "hono/jsx";
-import type { InvoiceFa3, InvoiceParty } from "../ksef/parser.js";
-import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku } from "../ksef/dictionaries.js";
+import type { InvoiceFa3, InvoiceParty, Adnotacje } from "../ksef/parser.js";
+import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags } from "../ksef/dictionaries.js";
+import type { AdnotacjeInput } from "../ksef/dictionaries.js";
 
 // Renders a parsed FA(3) invoice to a fully self-contained HTML document.
 // Uses only inline `<style>` so the CSP `default-src 'none'` block does not
@@ -486,6 +487,38 @@ const Wiersze: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   );
 };
 
+const PodsumowanieStawek: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  const { taxSummary, currency } = invoice;
+  if (taxSummary.length === 0) return null;
+  return (
+    <div class="ksef-section">
+      <h3 class="ksef-section__title">Podsumowanie stawek podatku</h3>
+      <table class="ksef-table ksef-table--stawki">
+        <thead>
+          <tr>
+            <th class="num">Lp.</th>
+            <th>Stawka podatku</th>
+            <th class="num">Kwota netto</th>
+            <th class="num">Kwota podatku</th>
+            <th class="num">Kwota brutto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {taxSummary.map((row) => (
+            <tr key={String(row.lp)}>
+              <td class="num">{row.lp}</td>
+              <td>{row.label}</td>
+              <td class="num">{fmtMoney(row.kwotaNetto, currency)}</td>
+              <td class="num">{fmtMoney(row.kwotaPodatku, currency)}</td>
+              <td class="num">{fmtMoney(row.kwotaBrutto, currency)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 export function renderInvoiceHtml(invoice: InvoiceFa3): string {
   const element = <InvoiceHtml invoice={invoice} />;
   // hono/jsx elements stringify directly; `toString()` produces the
@@ -512,36 +545,7 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
 
         <Wiersze invoice={invoice} />
 
-        {invoice.taxSummary.length > 0 ? (
-          <div class="summary">
-            <table>
-              <thead>
-                <tr>
-                  <th>Stawka</th>
-                  <th class="num">Netto</th>
-                  <th class="num">VAT</th>
-                  <th class="num">Brutto</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.taxSummary.map((row) => (
-                  <tr>
-                    <td>{row.label}</td>
-                    <td class="num">{fmtMoney(row.kwotaNetto, invoice.currency)}</td>
-                    <td class="num">{fmtMoney(row.kwotaPodatku, invoice.currency)}</td>
-                    <td class="num">{fmtMoney(row.kwotaBrutto, invoice.currency)}</td>
-                  </tr>
-                ))}
-                <tr>
-                  <td><strong>Razem</strong></td>
-                  <td></td>
-                  <td></td>
-                  <td class="num"><strong>{fmtMoney(invoice.totalGross, invoice.currency)}</strong></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        ) : null}
+        <PodsumowanieStawek invoice={invoice} />
 
         {invoice.payment ? (
           <>
