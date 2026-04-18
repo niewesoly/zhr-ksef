@@ -271,6 +271,14 @@ suite("parseInvoiceFa3: full fixture", () => {
     assert.ok(Array.isArray(inv.odbiorcy));
   });
 
+  test("additionalInfo reads Klucz/Wartosc from DodatkowyOpis", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.equal(inv.additionalInfo.length, 2);
+    assert.equal(inv.additionalInfo[0].rodzaj, "Numer zamówienia");
+    assert.equal(inv.additionalInfo[0].tresc, "ZAM/2026/04/001");
+    assert.equal(inv.additionalInfo[1].rodzaj, "Projekt");
+  });
+
   test("sample_fa3_extended.xml exposes every new section", () => {
     const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
     assert.ok(inv.adnotacje);

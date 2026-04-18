@@ -169,6 +169,16 @@
       <P_11A>24.60</P_11A>
       <P_12>23</P_12>
     </FaWiersz>
+    <DodatkowyOpis>
+      <NrWiersza>1</NrWiersza>
+      <Klucz>Numer zamówienia</Klucz>
+      <Wartosc>ZAM/2026/04/001</Wartosc>
+    </DodatkowyOpis>
+    <DodatkowyOpis>
+      <NrWiersza>0</NrWiersza>
+      <Klucz>Projekt</Klucz>
+      <Wartosc>KSeF-TS</Wartosc>
+    </DodatkowyOpis>
 
     <!-- Adnotacje: flags + nested Zwolnienie/P_19 + PMarzy with both
          P_PMarzy and P_PMarzy_3_1 to cover multiple procedure markers. -->

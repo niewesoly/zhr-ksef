@@ -401,7 +401,7 @@ function parseLineItems(fa: Record<string, unknown>): InvoiceLineItem[] {
   return rows.map((row, idx) => {
     if (!isRecord(row)) return null;
     return {
-      lp: idx + 1,
+      lp: findFieldNumber(row, "NrWierszaFa") ?? idx + 1,
       uuid: findFieldString(row, "NrWierszaFa"),
       nazwa: findFieldString(row, "P_7"),
       cenaJednNetto: findFieldNumber(row, "P_9A"),
@@ -449,8 +449,8 @@ function parseAdditionalInfo(fa: Record<string, unknown>): AdditionalInfo[] {
   return rows
     .map((row, idx) => {
       if (!isRecord(row)) return null;
-      const rodzaj = findFieldString(row, "NazwaInformacji") ?? findFieldString(row, "Rodzaj") ?? "";
-      const tresc = findFieldString(row, "TrescInformacji") ?? findFieldString(row, "Wartosc") ?? "";
+      const rodzaj = findFieldString(row, "Klucz") ?? findFieldString(row, "NazwaInformacji") ?? findFieldString(row, "Rodzaj") ?? "";
+      const tresc = findFieldString(row, "Wartosc") ?? findFieldString(row, "TrescInformacji") ?? "";
       return { lp: idx + 1, rodzaj, tresc } satisfies AdditionalInfo;
     })
     .filter((x): x is AdditionalInfo => x !== null);
