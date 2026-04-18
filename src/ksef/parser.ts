@@ -75,7 +75,7 @@ export interface InvoiceLineItem {
 
 export interface TaxSummaryRow {
   lp: number;
-  stawka: string;
+  label: string;
   kwotaNetto: number;
   kwotaPodatku: number;
   kwotaBrutto: number;
@@ -168,20 +168,6 @@ export const PAYMENT_METHOD: Record<string, string> = {
   "7": "Płatność mobilna",
 };
 
-export const VAT_RATE_LABEL: Record<string, string> = {
-  "23": "23% lub 22%",
-  "8": "8% lub 7%",
-  "5": "5% lub 4%",
-  "0": "0%",
-  ZW: "zw.",
-  NP: "np.",
-  OO: "0% (OO)",
-  WDT: "0% (WDT)",
-  EXP: "0% (EXP)",
-  IM: "np. (IM)",
-  WNT: "np. (WNT)",
-};
-
 const COUNTRY_NAME: Record<string, string> = {
   PL: "Polska", DE: "Niemcy", FR: "Francja", CZ: "Czechy", SK: "Słowacja",
   HU: "Węgry", RO: "Rumunia", AT: "Austria", BE: "Belgia", BG: "Bułgaria",
@@ -192,19 +178,27 @@ const COUNTRY_NAME: Record<string, string> = {
   NO: "Norwegia", CH: "Szwajcaria", UA: "Ukraina", US: "USA", CN: "Chiny",
 };
 
-// VAT rate field suffixes → VAT rate key (P_13_1/P_14_1 = 23%, etc.)
-const VAT_RATE_SUFFIXES: Array<{ suffix: string; rateKey: string }> = [
-  { suffix: "1", rateKey: "23" },
-  { suffix: "2", rateKey: "8" },
-  { suffix: "3", rateKey: "5" },
-  { suffix: "4", rateKey: "0" },
-  { suffix: "5", rateKey: "ZW" },
-  { suffix: "6", rateKey: "NP" },
-  { suffix: "7", rateKey: "OO" },
-  { suffix: "8", rateKey: "WDT" },
-  { suffix: "9", rateKey: "EXP" },
-  { suffix: "10", rateKey: "IM" },
-  { suffix: "11", rateKey: "WNT" },
+// FA(3) tax summary buckets — ported from ziher's parser.rb VAT_BUCKETS.
+// Each bucket reads a net field (P_13_*) and optionally a paired tax field
+// (P_14_*). Buckets 6–13 have no tax column; tax defaults to 0 for them.
+const VAT_BUCKETS: ReadonlyArray<{
+  net: string;
+  tax: string | null;
+  label: string;
+}> = [
+  { net: "P_13_1", tax: "P_14_1", label: "23% lub 22%" },
+  { net: "P_13_2", tax: "P_14_2", label: "8% lub 7%" },
+  { net: "P_13_3", tax: "P_14_3", label: "5%" },
+  { net: "P_13_4", tax: "P_14_4", label: "4% lub 3%" },
+  { net: "P_13_5", tax: "P_14_5", label: "OSS" },
+  { net: "P_13_6_1", tax: null, label: "0% (krajowe)" },
+  { net: "P_13_6_2", tax: null, label: "0% WDT" },
+  { net: "P_13_6_3", tax: null, label: "0% eksport" },
+  { net: "P_13_7", tax: null, label: "zwolnione od podatku" },
+  { net: "P_13_8", tax: null, label: "np. z wył. art. 100 ust. 1 pkt 4" },
+  { net: "P_13_9", tax: null, label: "np. art. 100 ust. 1 pkt 4" },
+  { net: "P_13_10", tax: null, label: "odwrotne obciążenie" },
+  { net: "P_13_11", tax: null, label: "marża" },
 ];
 
 // ─── Parser ───────────────────────────────────────────────────────────────────
@@ -319,15 +313,17 @@ function parseTaxSummary(fa: Record<string, unknown>): TaxSummaryRow[] {
   const rows: TaxSummaryRow[] = [];
   let lp = 1;
 
-  for (const { suffix, rateKey } of VAT_RATE_SUFFIXES) {
-    const net = findFieldNumber(fa, `P_13_${suffix}`);
-    const tax = findFieldNumber(fa, `P_14_${suffix}`);
+  for (const bucket of VAT_BUCKETS) {
+    const net = findFieldNumber(fa, bucket.net);
+    const tax = bucket.tax ? findFieldNumber(fa, bucket.tax) : null;
     if (net == null && tax == null) continue;
     const netVal = net ?? 0;
     const taxVal = tax ?? 0;
+    // Mirror ziher: skip rows where both net and tax are zero.
+    if (netVal === 0 && taxVal === 0) continue;
     rows.push({
       lp: lp++,
-      stawka: VAT_RATE_LABEL[rateKey] ?? rateKey,
+      label: bucket.label,
       kwotaNetto: netVal,
       kwotaPodatku: taxVal,
       kwotaBrutto: netVal + taxVal,

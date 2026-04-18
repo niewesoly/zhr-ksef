@@ -143,7 +143,7 @@ function buildDocument(invoice: InvoiceFa3): ReactElement<DocumentProps> {
           h(
             View,
             { key: i, style: styles.tRow },
-            h(Text, { style: [styles.cell, { width: "30%" }] }, r.stawka),
+            h(Text, { style: [styles.cell, { width: "30%" }] }, r.label),
             h(Text, { style: [styles.cellNum, { width: "25%" }] }, fmtMoney(r.kwotaNetto, currency)),
             h(Text, { style: [styles.cellNum, { width: "20%" }] }, fmtMoney(r.kwotaPodatku, currency)),
             h(Text, { style: [styles.cellNum, { width: "25%" }] }, fmtMoney(r.kwotaBrutto, currency)),

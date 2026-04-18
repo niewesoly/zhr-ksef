@@ -69,3 +69,11 @@ suite("parseInvoiceFa3: wiersze", () => {
     );
   });
 });
+
+suite("parseInvoiceFa3: tax summary", () => {
+  test("returns two non-zero buckets from extended fixture", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.equal(inv.taxSummary.length, 2);
+    assert.equal(inv.taxSummary[0].label, "23% lub 22%");
+  });
+});

@@ -136,7 +136,7 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
               <tbody>
                 {invoice.taxSummary.map((row) => (
                   <tr>
-                    <td>{row.stawka}</td>
+                    <td>{row.label}</td>
                     <td class="num">{fmtMoney(row.kwotaNetto, invoice.currency)}</td>
                     <td class="num">{fmtMoney(row.kwotaPodatku, invoice.currency)}</td>
                     <td class="num">{fmtMoney(row.kwotaBrutto, invoice.currency)}</td>
