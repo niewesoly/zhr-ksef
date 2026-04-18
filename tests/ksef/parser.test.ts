@@ -111,13 +111,13 @@ suite("parseInvoiceFa3: rozliczenie", () => {
     assert.equal(inv.rozliczenie.odliczenia[0].powod, "Rabat posprzedażowy");
   });
 
-  test("lists default to [] when Rozliczenie has no child entries", () => {
+  test("returns null when Rozliczenie element is absent", () => {
     // sample_fa3.xml has no Rozliczenie element at all.
     const inv = parseInvoiceFa3(loadFixture("sample_fa3.xml"), "K");
     assert.equal(inv.rozliczenie, null);
   });
 
-  test("arrays are empty when element exists but children absent", () => {
+  test("obciazenia and odliczenia default to [] when child elements are absent", () => {
     // Build a minimal XML with Rozliczenie but no Obciazenia/Odliczenia.
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <Faktura xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/">
