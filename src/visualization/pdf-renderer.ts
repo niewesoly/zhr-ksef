@@ -88,14 +88,40 @@ const styles = StyleSheet.create({
   totalValue: { fontFamily: "Helvetica-Bold", width: 80, textAlign: "right" },
 });
 
+function fmtDate(d: string | null | undefined): string {
+  if (!d) return "—";
+  const m = d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return "—";
+  return `${m[3]}.${m[2]}.${m[1]}`;
+}
+
 function fmtMoney(n: number | null, currency: string | null | undefined): string {
   if (n == null) return "—";
   return `${n.toFixed(2)} ${currency ?? ""}`.trim();
 }
 
+function fmtMoneyStr(s: string | null, currency: string | null | undefined): string {
+  if (s == null) return "—";
+  const n = parseFloat(s);
+  return isNaN(n) ? "—" : fmtMoney(n, currency);
+}
+
 function fmtQty(n: number | null): string {
   if (n == null) return "—";
   return Number.isInteger(n) ? String(n) : n.toString();
+}
+
+function dlRow(label: string, value: string, two = false): ReactElement {
+  return h(
+    View,
+    { style: two ? styles.dlRowTwo : styles.dlRow },
+    h(Text, { style: two ? styles.dlLabelTwo : styles.dlLabel }, label),
+    h(Text, { style: two ? styles.dlValueTwo : styles.dlValue }, value),
+  );
+}
+
+function sectionTitle(text: string): ReactElement {
+  return h(Text, { style: styles.sectionTitle }, text);
 }
 
 function party(title: string, p: InvoiceFa3["seller"] | null): ReactElement | null {
