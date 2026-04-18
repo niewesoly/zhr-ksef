@@ -118,6 +118,57 @@ suite("html-renderer", () => {
     assert.match(html, /class="ksef-invoice"/, "outer wrapper element must be present");
   });
 
+  // S1: linkDoPlatnosci XSS guard — javascript: URI must NOT render as <a href>
+  test("platnosc does not render javascript: linkDoPlatnosci as an anchor", () => {
+    // Build a minimal XML with a javascript: URI in LinkDoPlatnosci
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Faktura xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/">
+  <Podmiot1>
+    <DaneIdentyfikacyjne>
+      <NIP>9876543210</NIP>
+      <Nazwa>Sprzedawca SP. Z O.O.</Nazwa>
+    </DaneIdentyfikacyjne>
+  </Podmiot1>
+  <Podmiot2>
+    <DaneIdentyfikacyjne>
+      <NIP>1234567890</NIP>
+      <Nazwa>Nabywca SP. Z O.O.</Nazwa>
+    </DaneIdentyfikacyjne>
+  </Podmiot2>
+  <Fa>
+    <P_1>2026-03-15</P_1>
+    <P_2>FV/2026/03/XSS</P_2>
+    <KodWaluty>PLN</KodWaluty>
+    <P_13_1>100.00</P_13_1>
+    <P_15>123.00</P_15>
+    <FaWiersz>
+      <P_7>Testowa usługa</P_7>
+      <P_11>100.00</P_11>
+      <P_12>23</P_12>
+    </FaWiersz>
+    <Platnosc>
+      <LinkDoPlatnosci>javascript:alert(1)</LinkDoPlatnosci>
+    </Platnosc>
+  </Fa>
+</Faktura>`;
+    const invXss = parseInvoiceFa3(xml, "XSS-TEST");
+    const html = renderInvoiceHtml(invXss);
+    // Must NOT contain the javascript: URI as an href attribute
+    assert.doesNotMatch(html, /href="javascript:/);
+    // Must still render the text value (visible to user without being a link)
+    assert.match(html, /javascript:alert\(1\)/);
+    // Must NOT wrap it in an anchor element at all
+    assert.doesNotMatch(html, /<a [^>]*href="javascript:/);
+  });
+
+  // S2: linkDoPlatnosci with https: URL renders as a safe anchor
+  test("platnosc renders https: linkDoPlatnosci as an anchor with rel=noopener", () => {
+    const html = renderInvoiceHtml(inv);
+    // The extended fixture has LinkDoPlatnosci = https://pay.example/invoice/EXT-0001
+    assert.match(html, /href="https:\/\/pay\.example\/invoice\/EXT-0001"/);
+    assert.match(html, /rel="noopener noreferrer"/);
+  });
+
   // F2: Visual regression guard — all 11 sections present in extended fixture output
   test("regression guard: all 11 sections render for extended fixture", () => {
     const html = renderInvoiceHtml(inv);

@@ -200,6 +200,14 @@ const STYLES = `
 `;
 
 
+/**
+ * Returns true only when the URL uses the HTTPS scheme.
+ * Rejects http://, javascript:, data:, and empty strings.
+ */
+function isSafeUrl(url: string): boolean {
+  return url.startsWith("https://");
+}
+
 type PodmiotRole = "sprzedawca" | "nabywca" | "odbiorca";
 
 const Podmiot: FC<{ podmiot: InvoiceParty; role: PodmiotRole }> = ({ podmiot, role }) => {
@@ -633,7 +641,11 @@ const Platnosc: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
         {payment.linkDoPlatnosci !== null ? (
           <>
             <dt>Link do płatności</dt>
-            <dd><a href={payment.linkDoPlatnosci}>{payment.linkDoPlatnosci}</a></dd>
+            <dd>
+              {isSafeUrl(payment.linkDoPlatnosci)
+                ? <a href={payment.linkDoPlatnosci} rel="noopener noreferrer">{payment.linkDoPlatnosci}</a>
+                : payment.linkDoPlatnosci}
+            </dd>
           </>
         ) : null}
       </dl>
