@@ -38,3 +38,12 @@ suite("parseInvoiceFa3: odbiorcy", () => {
     assert.equal(inv.odbiorcy[1].rolaPodmiotu3, "2");
   });
 });
+
+suite("parseInvoiceFa3: Fa core", () => {
+  test("surfaces p_1m, p_6, okresFaKorygowanej", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.ok(inv.placeOfIssue); // p_1m
+    assert.ok(inv.saleDate);     // p_6
+    assert.equal(inv.okresFaKorygowanej, "2026-01");
+  });
+});

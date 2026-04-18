@@ -118,6 +118,7 @@ export interface InvoiceFa3 {
   invoiceType: string | null;
   invoiceTypeLabel: string;
   issueDate: string | null;
+  saleDate: string | null;
   currency: string;
   placeOfIssue: string | null;
   seller: InvoiceParty;
@@ -133,6 +134,8 @@ export interface InvoiceFa3 {
   correctedInvoiceNumber: string | null;
   correctedInvoiceDate: string | null;
   correctionReason: string | null;
+  przyczynaKorekty: string | null;
+  okresFaKorygowanej: string | null;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -450,6 +453,7 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
   const correctedInvoiceNumber = korekta ? findFieldString(korekta, "P_3A") : null;
   const correctedInvoiceDate = korekta ? findFieldString(korekta, "P_3B") : null;
   const correctionReason = findFieldString(fa, "PrzyczynaKorekty");
+  const okresFaKorygowanej = findFieldString(fa, "OkresFaKorygowanej");
 
   // Payment
   const platnosci = findField(fa, "Platnosc");
@@ -466,8 +470,9 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     invoiceType,
     invoiceTypeLabel,
     issueDate: findFieldString(fa, "P_1"),
+    saleDate: findFieldString(fa, "P_6"),
     currency: findFieldString(fa, "KodWaluty") ?? "PLN",
-    placeOfIssue: findFieldString(fa, "MiejsceWystawienia"),
+    placeOfIssue: findFieldString(fa, "P_1M"),
     seller: parseParty(podmiot1, "sprzedawca"),
     buyer: parseParty(podmiot2, "nabywca"),
     odbiorcy: toArray(findField(faktura, "Podmiot3"))
@@ -483,5 +488,7 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     correctedInvoiceNumber,
     correctedInvoiceDate,
     correctionReason,
+    przyczynaKorekty: correctionReason,
+    okresFaKorygowanej,
   };
 }
