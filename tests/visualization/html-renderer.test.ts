@@ -52,4 +52,12 @@ suite("html-renderer", () => {
     assert.match(html, /ksef-dl/);
     assert.match(html, /Kod waluty/);
   });
+
+  // D7: Wiersze pozycje table
+  test("wiersze renders Pozycje section with table rows", () => {
+    const html = renderInvoiceHtml(inv);
+    assert.match(html, /Pozycje/);
+    assert.match(html, /ksef-table--wiersze/);
+    assert.match(html, /Kwota należności ogółem/);
+  });
 });

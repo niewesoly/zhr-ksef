@@ -1,6 +1,6 @@
 import type { FC } from "hono/jsx";
 import type { InvoiceFa3, InvoiceParty } from "../ksef/parser.js";
-import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short } from "../ksef/dictionaries.js";
+import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku } from "../ksef/dictionaries.js";
 
 // Renders a parsed FA(3) invoice to a fully self-contained HTML document.
 // Uses only inline `<style>` so the CSP `default-src 'none'` block does not
@@ -433,6 +433,59 @@ const Szczegoly: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   );
 };
 
+const Wiersze: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
+  const { lineItems, bruttoMode, currency, totalGross } = invoice;
+  if (lineItems.length === 0) return null;
+  const priceLabel = bruttoMode ? "Cena brutto" : "Cena netto";
+  return (
+    <div class="ksef-section">
+      <h3 class="ksef-section__title">Pozycje</h3>
+      {currency !== "PLN" && currency ? (
+        <p class="ksef-note">Faktura wystawiona w walucie {currency}</p>
+      ) : null}
+      <table class="ksef-table ksef-table--wiersze">
+        <thead>
+          <tr>
+            <th class="num">Lp.</th>
+            <th>Nazwa towaru lub usługi</th>
+            <th class="num">Ilość</th>
+            <th>Miara</th>
+            <th class="num">{priceLabel}</th>
+            <th class="num">Wartość netto</th>
+            <th class="num">Wartość brutto</th>
+            <th class="num">Stawka</th>
+          </tr>
+        </thead>
+        <tbody>
+          {lineItems.map((row, i) => {
+            const cena = bruttoMode
+              ? (row.cenaJednBrutto ?? row.cenaJednNetto)
+              : (row.cenaJednNetto ?? row.cenaJednBrutto);
+            const stawkaLabel = stawkaPodatku(row.stawkaPodatku) || row.stawkaPodatku || "—";
+            return (
+              <tr key={String(i)}>
+                <td class="num">{row.lp ?? String(i + 1)}</td>
+                <td>{row.nazwa ?? "—"}</td>
+                <td class="num">{fmtQty(row.ilosc)}</td>
+                <td>{row.miara ?? "—"}</td>
+                <td class="num">{fmtMoney(cena, currency)}</td>
+                <td class="num">{fmtMoney(row.wartoscNetto, currency)}</td>
+                <td class="num">{fmtMoney(row.wartoscBrutto, currency)}</td>
+                <td class="num">{stawkaLabel}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {totalGross != null ? (
+        <p class="ksef-total">
+          Kwota należności ogółem: <strong>{fmtMoney(totalGross, currency)}</strong>
+        </p>
+      ) : null}
+    </div>
+  );
+};
+
 export function renderInvoiceHtml(invoice: InvoiceFa3): string {
   const element = <InvoiceHtml invoice={invoice} />;
   // hono/jsx elements stringify directly; `toString()` produces the
@@ -457,33 +510,7 @@ const InvoiceHtml: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
 
         <Szczegoly invoice={invoice} />
 
-        <h2>Pozycje</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Lp.</th>
-              <th>Nazwa</th>
-              <th class="num">Ilość</th>
-              <th>Miara</th>
-              <th class="num">Cena netto</th>
-              <th>Stawka</th>
-              <th class="num">Wartość netto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoice.lineItems.map((item) => (
-              <tr>
-                <td>{item.lp}</td>
-                <td>{item.nazwa ?? "—"}</td>
-                <td class="num">{fmtQty(item.ilosc)}</td>
-                <td>{item.miara ?? "—"}</td>
-                <td class="num">{fmtMoney(item.cenaJednNetto, invoice.currency)}</td>
-                <td>{item.stawkaPodatku ?? "—"}</td>
-                <td class="num">{fmtMoney(item.wartoscNetto, invoice.currency)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Wiersze invoice={invoice} />
 
         {invoice.taxSummary.length > 0 ? (
           <div class="summary">
