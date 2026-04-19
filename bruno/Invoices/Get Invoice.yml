@@ -1,0 +1,31 @@
+info:
+  name: Get Invoice
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/v1/tenants/{{tenantId}}/invoices/{{invoiceId}}"
+  headers: []
+  body:
+    type: none
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("returns 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+        test("response has invoice detail", function() {
+          expect(res.body.invoice).to.be.an("object");
+          expect(res.body.invoice.id).to.be.a("string");
+          expect(res.body.invoice.ksefNumber).to.be.a("string");
+          expect(res.body.invoice.status).to.be.a("string");
+        });
+
+settings:
+  encodeUrl: true

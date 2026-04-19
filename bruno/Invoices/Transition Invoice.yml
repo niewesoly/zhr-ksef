@@ -1,0 +1,38 @@
+info:
+  name: Transition Invoice
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/tenants/{{tenantId}}/invoices/{{invoiceId}}/transition"
+  headers:
+    - name: content-type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "action": "release",
+        "actor": "bruno-test"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("returns 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+        test("response shows transition result", function() {
+          expect(res.body.invoice).to.be.an("object");
+          expect(res.body.invoice.fromStatus).to.be.a("string");
+          expect(res.body.invoice.toStatus).to.be.a("string");
+          expect(res.body.invoice.eventId).to.be.a("string");
+        });
+
+settings:
+  encodeUrl: true
