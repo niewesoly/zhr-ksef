@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -47,7 +48,7 @@ export const syncMode = pgEnum("sync_mode", ["incremental", "range"]);
 export const tenants = pgTable(
   "tenants",
   {
-    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid("id").primaryKey().$defaultFn(() => randomUUID()),
     name: varchar("name", { length: 200 }).notNull(),
 
     // API key auth. The caller presents `${apiKeyId}_${secret}`; we look up by
@@ -90,7 +91,7 @@ export const tenants = pgTable(
 export const invoices = pgTable(
   "invoices",
   {
-    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid("id").primaryKey().$defaultFn(() => randomUUID()),
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id, { onDelete: "cascade" }),
@@ -135,7 +136,7 @@ export const invoices = pgTable(
 export const invoiceEvents = pgTable(
   "invoice_events",
   {
-    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid("id").primaryKey().$defaultFn(() => randomUUID()),
     // tenant_id is denormalised here so RLS can enforce isolation without a
     // join back to invoices (the RLS policy reads current_setting directly).
     tenantId: uuid("tenant_id")
@@ -162,7 +163,7 @@ export const invoiceEvents = pgTable(
 export const syncRuns = pgTable(
   "sync_runs",
   {
-    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid("id").primaryKey().$defaultFn(() => randomUUID()),
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id, { onDelete: "cascade" }),

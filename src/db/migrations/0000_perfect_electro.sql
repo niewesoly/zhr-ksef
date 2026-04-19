@@ -3,7 +3,7 @@ CREATE TYPE "public"."ksef_env" AS ENUM('production', 'test', 'demo');--> statem
 CREATE TYPE "public"."sync_mode" AS ENUM('incremental', 'range');--> statement-breakpoint
 CREATE TYPE "public"."sync_run_status" AS ENUM('running', 'ok', 'error');--> statement-breakpoint
 CREATE TABLE "invoice_events" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"tenant_id" uuid NOT NULL,
 	"invoice_id" uuid NOT NULL,
 	"from_status" "invoice_status",
@@ -14,7 +14,7 @@ CREATE TABLE "invoice_events" (
 );
 --> statement-breakpoint
 CREATE TABLE "invoices" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"tenant_id" uuid NOT NULL,
 	"ksef_number" varchar(100) NOT NULL,
 	"invoice_number" varchar(100),
@@ -37,7 +37,7 @@ CREATE TABLE "invoices" (
 );
 --> statement-breakpoint
 CREATE TABLE "sync_runs" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"tenant_id" uuid NOT NULL,
 	"status" "sync_run_status" DEFAULT 'running' NOT NULL,
 	"mode" "sync_mode" DEFAULT 'incremental' NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE "sync_runs" (
 );
 --> statement-breakpoint
 CREATE TABLE "tenants" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"name" varchar(200) NOT NULL,
 	"api_key_id" varchar(32) NOT NULL,
 	"api_key_hash" varchar(120) NOT NULL,
