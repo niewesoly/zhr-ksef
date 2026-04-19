@@ -6,7 +6,9 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/api/v1/tenants/{{tenantId}}/sync"
-  headers: []
+  headers:
+    - name: X-API-Key
+      value: "{{apiKey}}"
   body:
     type: none
   auth:
@@ -14,11 +16,6 @@ http:
 
 runtime:
   scripts:
-    - type: after-response
-      code: |-
-        if (res.status === 202) {
-          bru.setVar("syncRunId", res.body.jobId);
-        }
     - type: tests
       code: |-
         test("returns 202 Accepted", function() {

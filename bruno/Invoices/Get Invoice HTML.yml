@@ -9,6 +9,8 @@ http:
   headers:
     - name: accept
       value: text/html
+    - name: X-API-Key
+      value: "{{apiKey}}"
   body:
     type: none
   auth:

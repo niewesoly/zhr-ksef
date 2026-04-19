@@ -6,7 +6,9 @@ info:
 http:
   method: GET
   url: "{{baseUrl}}/api/v1/tenants/{{tenantId}}/invoices/{{invoiceId}}/events"
-  headers: []
+  headers:
+    - name: X-API-Key
+      value: "{{apiKey}}"
   body:
     type: none
   auth:
