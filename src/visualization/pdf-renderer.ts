@@ -164,6 +164,9 @@ function naglowek(invoice: InvoiceFa3): ReactElement {
       h(Text, { style: styles.naglowekLabel }, "Numer faktury:"),
       h(Text, { style: styles.naglowekNumber }, invoice.invoiceNumber ?? "—"),
       h(Text, { style: styles.naglowekRodzaj }, rodzajLabel),
+      invoice.tp
+        ? h(Text, { style: { fontSize: 7, color: "#b71c1c" } }, "Podmiot powiązany (TP)")
+        : null,
       invoice.ksefNumber
         ? h(Text, { style: styles.naglowekKsef }, `Numer KSeF: ${invoice.ksefNumber}`)
         : null,
@@ -293,6 +296,7 @@ function szczegoly(invoice: InvoiceFa3): ReactElement {
   if (invoice.issueDate) rows.push(dlRow("Data wystawienia:", fmtDate(invoice.issueDate), true));
   const saleDateLabel = invoice.invoiceType === "ZAL" ? "Data zamówienia/umowy:" : "Data sprzedaży:";
   if (invoice.saleDate) rows.push(dlRow(saleDateLabel, fmtDate(invoice.saleDate), true));
+  if (invoice.okresFa) rows.push(dlRow("Okres dostawy:", invoice.okresFa, true));
   if (invoice.placeOfIssue) rows.push(dlRow("Miejsce wystawienia:", invoice.placeOfIssue, true));
   if (invoice.invoiceNumber) rows.push(dlRow("Numer faktury:", invoice.invoiceNumber, true));
   return h(View, { style: styles.section, wrap: false }, sectionTitle("Szczegóły"), ...rows);
@@ -303,8 +307,9 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
   const currency = invoice.currency;
   const brutto = invoice.bruttoMode;
   const hasGtu = invoice.lineItems.some((r) => r.gtu != null);
+  const hasRabat = invoice.lineItems.some((r) => r.rabat != null);
 
-  const nazwaSz = hasGtu ? "28%" : "36%";
+  const nazwaSz = hasGtu && hasRabat ? "20%" : hasGtu || hasRabat ? "28%" : "36%";
 
   const headerCells = [
     tableCell("Lp.", { width: "4%", isHeader: true }),
@@ -312,6 +317,7 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
     tableCell("Ilość", { width: "8%", align: "right", isHeader: true }),
     tableCell("Miara", { width: "7%", isHeader: true }),
     tableCell(brutto ? "Cena brutto" : "Cena netto", { width: "13%", align: "right", isHeader: true }),
+    ...(hasRabat ? [tableCell("Rabat %", { width: "8%", align: "right", isHeader: true })] : []),
     tableCell("Stawka", { width: "8%", isHeader: true }),
     tableCell(brutto ? "Wartość brutto" : "Wartość netto", { width: "12%", align: "right", isHeader: true }),
     ...(!brutto ? [tableCell("Wartość brutto", { width: "12%", align: "right", isHeader: true })] : []),
@@ -323,6 +329,8 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
       item.nazwa ?? "—",
       item.p12Zal15 ? "[zał. 15]" : null,
       item.stanPrzed ? "[stan przed]" : null,
+      item.p6a ? `[dostawa: ${fmtDate(item.p6a)}]` : null,
+      item.wz ? `[WZ: ${item.wz}]` : null,
     ].filter(Boolean).join(" ");
 
     const cells = [
@@ -334,6 +342,7 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
         brutto ? fmtMoney(item.cenaJednBrutto ?? null, currency) : fmtMoney(item.cenaJednNetto, currency),
         { width: "13%", align: "right" },
       ),
+      ...(hasRabat ? [tableCell(item.rabat != null ? `${item.rabat}%` : "—", { width: "8%", align: "right" })] : []),
       tableCell(stawkaPodatku(item.stawkaPodatku ?? null), { width: "8%" }),
       tableCell(
         brutto ? fmtMoney(item.wartoscBrutto ?? null, currency) : fmtMoney(item.wartoscNetto, currency),
@@ -368,7 +377,16 @@ function podsumowanieStawek(invoice: InvoiceFa3): ReactElement | null {
   if (rows.length === 0) return null;
   const currency = invoice.currency;
 
-  const headerCells = [
+  const hasPLN = rows.some((r) => r.kwotaPodatkuPLN != null);
+
+  const headerCells = hasPLN ? [
+    tableCell("Lp.", { width: "6%", isHeader: true }),
+    tableCell("Stawka", { width: "20%", isHeader: true }),
+    tableCell("Netto", { width: "18%", align: "right", isHeader: true }),
+    tableCell("VAT", { width: "18%", align: "right", isHeader: true }),
+    tableCell("VAT (PLN)", { width: "18%", align: "right", isHeader: true }),
+    tableCell("Brutto", { width: "20%", align: "right", isHeader: true }),
+  ] : [
     tableCell("Lp.", { width: "8%", isHeader: true }),
     tableCell("Stawka", { width: "24%", isHeader: true }),
     tableCell("Netto", { width: "22%", align: "right", isHeader: true }),
@@ -377,7 +395,14 @@ function podsumowanieStawek(invoice: InvoiceFa3): ReactElement | null {
   ];
 
   const dataRows = rows.map((r, i) =>
-    tableRow([
+    tableRow(hasPLN ? [
+      tableCell(String(r.lp), { width: "6%" }),
+      tableCell(r.label, { width: "20%" }),
+      tableCell(fmtMoney(r.kwotaNetto, currency), { width: "18%", align: "right" }),
+      tableCell(fmtMoney(r.kwotaPodatku, currency), { width: "18%", align: "right" }),
+      tableCell(fmtMoney(r.kwotaPodatkuPLN, "PLN"), { width: "18%", align: "right" }),
+      tableCell(fmtMoney(r.kwotaBrutto, currency), { width: "20%", align: "right" }),
+    ] : [
       tableCell(String(r.lp), { width: "8%" }),
       tableCell(r.label, { width: "24%" }),
       tableCell(fmtMoney(r.kwotaNetto, currency), { width: "22%", align: "right" }),
