@@ -1,0 +1,53 @@
+# Production stack: app + worker containers, external Postgres, internal Redis.
+#
+# Redis is not exposed to the host — it is accessible only within the Docker
+# network (service name "redis"). Postgres is external; DATABASE_URL in
+# .env.production points to it directly.
+#
+# Usage:
+#   REDIS_PASSWORD=<secret> docker compose -f docker-compose.prod.yml up -d
+#
+# .env.production must contain DATABASE_URL and REDIS_URL of the form:
+#   REDIS_URL=redis://default:<PASSWORD>@redis:6379
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      - --appendonly
+      - "yes"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "$$REDIS_PASSWORD", "PING"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file: .env.production
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    restart: unless-stopped
+    command: ["node", "dist/jobs/worker.js"]
+    env_file: .env.production
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redisdata:
