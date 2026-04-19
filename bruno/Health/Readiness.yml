@@ -1,0 +1,29 @@
+info:
+  name: Readiness
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/health/detailed"
+  headers: []
+  body:
+    type: none
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("returns 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+        test("body has status ok and tenant UUID", function() {
+          expect(res.body.status).to.equal("ok");
+          expect(res.body.tenant).to.be.a("string");
+        });
+
+settings:
+  encodeUrl: true
