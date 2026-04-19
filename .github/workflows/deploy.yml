@@ -42,10 +42,11 @@ jobs:
           script: |
             set -e
             cd /opt/zhr-ksef
+            set -a && source .env.production && set +a
             git pull origin main
             docker compose --env-file .env.production -f docker-compose.prod.yml build
             docker compose --env-file .env.production -f docker-compose.prod.yml run --rm app node dist/db/migrate.js
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d
             sleep 5
-            curl -f http://localhost:${PORT:-3000}/health || (docker compose --env-file .env.production -f docker-compose.prod.yml logs --tail=50 && exit 1)
+            curl -f http://localhost:${PORT}/health || (docker compose --env-file .env.production -f docker-compose.prod.yml logs --tail=50 && exit 1)
             docker image prune -f
