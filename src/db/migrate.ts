@@ -10,6 +10,7 @@ if (!url) {
 
 const client = postgres(url, { max: 1 });
 const db = drizzle(client);
+await client`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`;
 await migrate(db, { migrationsFolder: "./src/db/migrations" });
 await client.end();
 console.log("migrations applied");
