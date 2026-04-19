@@ -1,0 +1,9 @@
+variables:
+  - name: baseUrl
+    value: http://localhost:3000
+  - name: adminKey
+    value: ""
+    secret: true
+  - name: apiKey
+    value: ""
+    secret: true
