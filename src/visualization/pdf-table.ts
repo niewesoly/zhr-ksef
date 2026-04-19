@@ -67,16 +67,18 @@ const containerStyles = StyleSheet.create({
 });
 
 export function tableCell(text: string, opts: CellOptions): ReactElement {
-  const styles: object[] = [baseStyles.cell, { width: opts.width }];
-  if (opts.align === "right") styles.push(baseStyles.cellRight);
-  if (opts.isHeader) styles.push(baseStyles.headerCell);
-  return h(Text, { style: styles }, text);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- style arrays are valid at runtime
+  const cellStyles: any[] = [baseStyles.cell, { width: opts.width }];
+  if (opts.align === "right") cellStyles.push(baseStyles.cellRight);
+  if (opts.isHeader) cellStyles.push(baseStyles.headerCell);
+  return h(Text, { style: cellStyles }, text);
 }
 
 export function tableRow(cells: ReactElement[], opts: RowOptions): ReactElement {
-  const styles: object[] = [rowStyles.row];
-  if (opts.index % 2 === 0) styles.push(rowStyles.zebraEven);
-  return h(View, { style: styles, wrap: opts.wrap ?? false }, ...cells);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- style arrays are valid at runtime
+  const rowStyle: any[] = [rowStyles.row];
+  if (opts.index % 2 === 0) rowStyle.push(rowStyles.zebraEven);
+  return h(View, { style: rowStyle, wrap: opts.wrap ?? false }, ...cells);
 }
 
 export function tableHeader(cells: ReactElement[]): ReactElement {

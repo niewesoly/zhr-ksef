@@ -7,13 +7,15 @@ describe("pdf-table", () => {
     test("returns a ReactElement with Text type", () => {
       const el = tableCell("hello", { width: "30%" });
       assert.ok(el, "must return an element");
-      const typeName = el.type?.name ?? el.type?.displayName ?? el.type;
+      const t = el.type as { name?: string; displayName?: string };
+      const typeName = t.name ?? t.displayName ?? String(el.type);
       assert.equal(typeName.toUpperCase(), "TEXT");
     });
 
     test("applies right alignment for numeric cells", () => {
       const el = tableCell("123.45", { width: "20%", align: "right" });
-      const style = Array.isArray(el.props.style) ? el.props.style : [el.props.style];
+      const p = el.props as { style: object | object[] };
+      const style = Array.isArray(p.style) ? p.style : [p.style];
       const merged = Object.assign({}, ...style);
       assert.equal(merged.textAlign, "right");
     });
@@ -27,7 +29,8 @@ describe("pdf-table", () => {
       ];
       const row = tableRow(cells, { index: 0 });
       assert.ok(row, "must return an element");
-      const style = Array.isArray(row.props.style) ? row.props.style : [row.props.style];
+      const p = row.props as { style: object | object[] };
+      const style = Array.isArray(p.style) ? p.style : [p.style];
       const merged = Object.assign({}, ...style);
       assert.equal(merged.flexDirection, "row");
     });
@@ -35,7 +38,8 @@ describe("pdf-table", () => {
     test("even rows get zebra background", () => {
       const cells = [tableCell("A", { width: "100%" })];
       const row = tableRow(cells, { index: 0 });
-      const style = Array.isArray(row.props.style) ? row.props.style : [row.props.style];
+      const p = row.props as { style: object | object[] };
+      const style = Array.isArray(p.style) ? p.style : [p.style];
       const merged = Object.assign({}, ...style);
       assert.equal(merged.backgroundColor, "#f7f7f7");
     });
@@ -43,7 +47,8 @@ describe("pdf-table", () => {
     test("odd rows have no zebra background", () => {
       const cells = [tableCell("A", { width: "100%" })];
       const row = tableRow(cells, { index: 1 });
-      const style = Array.isArray(row.props.style) ? row.props.style : [row.props.style];
+      const p = row.props as { style: object | object[] };
+      const style = Array.isArray(p.style) ? p.style : [p.style];
       const merged = Object.assign({}, ...style);
       assert.equal(merged.backgroundColor, undefined);
     });
@@ -56,7 +61,8 @@ describe("pdf-table", () => {
         tableCell("Value", { width: "50%", isHeader: true }),
       ];
       const header = tableHeader(cells);
-      const style = Array.isArray(header.props.style) ? header.props.style : [header.props.style];
+      const p = header.props as { style: object | object[] };
+      const style = Array.isArray(p.style) ? p.style : [p.style];
       const merged = Object.assign({}, ...style);
       assert.equal(merged.backgroundColor, "#e8e8e8");
     });
@@ -68,7 +74,8 @@ describe("pdf-table", () => {
       const rows = [tableRow([tableCell("R", { width: "100%" })], { index: 0 })];
       const container = tableContainer(header, rows);
       assert.ok(container, "must return an element");
-      const style = Array.isArray(container.props.style) ? container.props.style : [container.props.style];
+      const p = container.props as { style: object | object[] };
+      const style = Array.isArray(p.style) ? p.style : [p.style];
       const merged = Object.assign({}, ...style);
       assert.equal(merged.borderTopWidth, 0.5);
     });

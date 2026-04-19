@@ -24,6 +24,7 @@ import {
   gtu,
 } from "../ksef/dictionaries.js";
 import type { AdnotacjeInput } from "../ksef/dictionaries.js";
+import { tableCell, tableRow, tableHeader, tableContainer } from "./pdf-table.js";
 
 const fontsDir = new URL("../assets/fonts/", import.meta.url).pathname;
 Font.register({
@@ -194,30 +195,26 @@ function naglowek(invoice: InvoiceFa3): ReactElement {
 function daneFaKorygowanej(invoice: InvoiceFa3): ReactElement | null {
   const refs = invoice.daneFaKorygowanej;
   if (refs.length === 0) return null;
+
+  const headerCells = [
+    tableCell("Numer", { width: "35%", isHeader: true }),
+    tableCell("Data wystawienia", { width: "20%", isHeader: true }),
+    tableCell("Numer KSeF", { width: "45%", isHeader: true }),
+  ];
+
+  const dataRows = refs.map((r, i) =>
+    tableRow([
+      tableCell(r.numer ?? "—", { width: "35%" }),
+      tableCell(fmtDate(r.dataWystawienia), { width: "20%" }),
+      tableCell(r.nrKsef ?? "—", { width: "45%" }),
+    ], { index: i }),
+  );
+
   return h(
     View,
     { style: styles.section, wrap: false },
     sectionTitle("Faktura koryguje"),
-    h(
-      View,
-      { style: styles.table },
-      h(
-        View,
-        { style: styles.tableHeader },
-        h(Text, { style: [styles.cell, { width: "35%" }] }, "Numer"),
-        h(Text, { style: [styles.cell, { width: "20%" }] }, "Data wystawienia"),
-        h(Text, { style: [styles.cell, { width: "45%" }] }, "Numer KSeF"),
-      ),
-      ...refs.map((r, i) =>
-        h(
-          View,
-          { key: String(i), style: styles.tableRow },
-          h(Text, { style: [styles.cell, { width: "35%" }] }, r.numer ?? "—"),
-          h(Text, { style: [styles.cell, { width: "20%" }] }, fmtDate(r.dataWystawienia)),
-          h(Text, { style: [styles.cell, { width: "45%" }] }, r.nrKsef ?? "—"),
-        ),
-      ),
-    ),
+    tableContainer(tableHeader(headerCells), dataRows),
   );
 }
 
@@ -305,56 +302,56 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
   const currency = invoice.currency;
   const brutto = invoice.bruttoMode;
   const hasGtu = invoice.lineItems.some((r) => r.gtu != null);
-  const nazwaSz = hasGtu ? "28%" : "36%";
+
+  const w = hasGtu
+    ? { lp: "5%", nazwa: "25%", ilosc: "7%", miara: "7%", cena: "12%", stawka: "7%", wart: "11%", gtu: "7%" }
+    : { lp: "5%", nazwa: "33%", ilosc: "8%", miara: "7%", cena: "13%", stawka: "8%", wart: "12%", gtu: "0%" };
+
+  const headerCells = [
+    tableCell("Lp.", { width: w.lp, isHeader: true }),
+    tableCell("Nazwa", { width: w.nazwa, isHeader: true }),
+    tableCell("Ilość", { width: w.ilosc, align: "right", isHeader: true }),
+    tableCell("Miara", { width: w.miara, isHeader: true }),
+    tableCell(brutto ? "Cena brutto" : "Cena netto", { width: w.cena, align: "right", isHeader: true }),
+    tableCell("Stawka", { width: w.stawka, isHeader: true }),
+    tableCell(brutto ? "Wartość brutto" : "Wartość netto", { width: w.wart, align: "right", isHeader: true }),
+    ...(!brutto ? [tableCell("Wartość brutto", { width: w.wart, align: "right", isHeader: true })] : []),
+    ...(hasGtu ? [tableCell("GTU", { width: w.gtu, isHeader: true })] : []),
+  ];
+
+  const dataRows = invoice.lineItems.map((item, i) => {
+    const nazwaText = [
+      item.nazwa ?? "—",
+      item.p12Zal15 ? "[zał. 15]" : null,
+      item.stanPrzed ? "[stan przed]" : null,
+    ].filter(Boolean).join(" ");
+
+    const cells = [
+      tableCell(String(item.lp), { width: w.lp }),
+      tableCell(nazwaText, { width: w.nazwa }),
+      tableCell(fmtQty(item.ilosc), { width: w.ilosc, align: "right" }),
+      tableCell(item.miara ?? "—", { width: w.miara }),
+      tableCell(
+        brutto ? fmtMoney(item.cenaJednBrutto ?? null, currency) : fmtMoney(item.cenaJednNetto, currency),
+        { width: w.cena, align: "right" },
+      ),
+      tableCell(stawkaPodatku(item.stawkaPodatku ?? null), { width: w.stawka }),
+      tableCell(
+        brutto ? fmtMoney(item.wartoscBrutto ?? null, currency) : fmtMoney(item.wartoscNetto, currency),
+        { width: w.wart, align: "right" },
+      ),
+      ...(!brutto ? [tableCell(fmtMoney(item.wartoscBrutto ?? null, currency), { width: w.wart, align: "right" })] : []),
+      ...(hasGtu ? [tableCell(item.gtu ? (gtu(item.gtu) ?? item.gtu) : "—", { width: w.gtu })] : []),
+    ];
+
+    return tableRow(cells, { index: i });
+  });
+
   return h(
     View,
     { style: styles.section },
     sectionTitle("Pozycje"),
-    h(
-      View,
-      { style: styles.table },
-      h(
-        View,
-        { style: styles.tableHeader, minPresenceAhead: 0.05 },
-        h(Text, { style: [styles.cell, { width: "4%" }] }, "Lp."),
-        h(Text, { style: [styles.cell, { width: nazwaSz }] }, "Nazwa"),
-        h(Text, { style: [styles.cellNum, { width: "8%" }] }, "Ilość"),
-        h(Text, { style: [styles.cell, { width: "7%" }] }, "Miara"),
-        brutto
-          ? h(Text, { style: [styles.cellNum, { width: "13%" }] }, "Cena brutto")
-          : h(Text, { style: [styles.cellNum, { width: "13%" }] }, "Cena netto"),
-        h(Text, { style: [styles.cell, { width: "8%" }] }, "Stawka"),
-        brutto
-          ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość brutto")
-          : h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość netto"),
-        !brutto ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, "Wartość brutto") : null,
-        hasGtu ? h(Text, { style: [styles.cell, { width: "8%" }] }, "GTU") : null,
-      ),
-      ...invoice.lineItems.map((item, i) => {
-        const nazwaText = [
-          item.nazwa ?? "—",
-          item.p12Zal15 ? "[zał. 15]" : null,
-          item.stanPrzed ? "[stan przed]" : null,
-        ].filter(Boolean).join(" ");
-        return h(
-          View,
-          { key: String(i), style: styles.tableRow, wrap: false },
-          h(Text, { style: [styles.cell, { width: "4%" }] }, String(item.lp)),
-          h(Text, { style: [styles.cell, { width: nazwaSz }] }, nazwaText),
-          h(Text, { style: [styles.cellNum, { width: "8%" }] }, fmtQty(item.ilosc)),
-          h(Text, { style: [styles.cell, { width: "7%" }] }, item.miara ?? "—"),
-          brutto
-            ? h(Text, { style: [styles.cellNum, { width: "13%" }] }, fmtMoney(item.cenaJednBrutto ?? null, currency))
-            : h(Text, { style: [styles.cellNum, { width: "13%" }] }, fmtMoney(item.cenaJednNetto, currency)),
-          h(Text, { style: [styles.cell, { width: "8%" }] }, stawkaPodatku(item.stawkaPodatku ?? null)),
-          brutto
-            ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscBrutto ?? null, currency))
-            : h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscNetto, currency)),
-          !brutto ? h(Text, { style: [styles.cellNum, { width: "12%" }] }, fmtMoney(item.wartoscBrutto ?? null, currency)) : null,
-          hasGtu ? h(Text, { style: [styles.cell, { width: "8%" }] }, item.gtu ? (gtu(item.gtu) ?? item.gtu) : "—") : null,
-        );
-      }),
-    ),
+    tableContainer(tableHeader(headerCells), dataRows),
     invoice.totalGross != null
       ? h(
           View,
@@ -371,32 +368,28 @@ function podsumowanieStawek(invoice: InvoiceFa3): ReactElement | null {
   const rows = invoice.taxSummary;
   if (rows.length === 0) return null;
   const currency = invoice.currency;
+
+  const headerCells = [
+    tableCell("Stawka", { width: "28%", isHeader: true }),
+    tableCell("Netto", { width: "24%", align: "right", isHeader: true }),
+    tableCell("VAT", { width: "24%", align: "right", isHeader: true }),
+    tableCell("Brutto", { width: "24%", align: "right", isHeader: true }),
+  ];
+
+  const dataRows = rows.map((r, i) =>
+    tableRow([
+      tableCell(r.label, { width: "28%" }),
+      tableCell(fmtMoney(r.kwotaNetto, currency), { width: "24%", align: "right" }),
+      tableCell(fmtMoney(r.kwotaPodatku, currency), { width: "24%", align: "right" }),
+      tableCell(fmtMoney(r.kwotaBrutto, currency), { width: "24%", align: "right" }),
+    ], { index: i }),
+  );
+
   return h(
     View,
     { style: styles.section, wrap: false },
     sectionTitle("Podsumowanie stawek VAT"),
-    h(
-      View,
-      { style: styles.table },
-      h(
-        View,
-        { style: styles.tableHeader },
-        h(Text, { style: [styles.cell, { width: "28%" }] }, "Stawka"),
-        h(Text, { style: [styles.cellNum, { width: "24%" }] }, "Netto"),
-        h(Text, { style: [styles.cellNum, { width: "24%" }] }, "VAT"),
-        h(Text, { style: [styles.cellNum, { width: "24%" }] }, "Brutto"),
-      ),
-      ...rows.map((r, i) =>
-        h(
-          View,
-          { key: String(i), style: styles.tableRow },
-          h(Text, { style: [styles.cell, { width: "28%" }] }, r.label),
-          h(Text, { style: [styles.cellNum, { width: "24%" }] }, fmtMoney(r.kwotaNetto, currency)),
-          h(Text, { style: [styles.cellNum, { width: "24%" }] }, fmtMoney(r.kwotaPodatku, currency)),
-          h(Text, { style: [styles.cellNum, { width: "24%" }] }, fmtMoney(r.kwotaBrutto, currency)),
-        ),
-      ),
-    ),
+    tableContainer(tableHeader(headerCells), dataRows),
   );
 }
 
@@ -481,24 +474,21 @@ function platnosc(invoice: InvoiceFa3): ReactElement | null {
     ? h(
         View,
         { style: { marginTop: 3 } },
-        h(
-          View,
-          { style: styles.tableHeader },
-          h(Text, { style: [styles.cell, { width: "30%" }] }, "Data zapłaty częściowej"),
-          h(Text, { style: [styles.cellNum, { width: "35%" }] }, "Kwota"),
-          h(Text, { style: [styles.cell, { width: "35%" }] }, "Forma płatności"),
-        ),
-        ...pmt.zaplataCzesciowa.map((zc, i) =>
-          h(
-            View,
-            { key: String(i), style: styles.tableRow },
-            h(Text, { style: [styles.cell, { width: "30%" }] }, fmtDate(zc.data)),
-            h(Text, { style: [styles.cellNum, { width: "35%" }] }, fmtMoneyStr(zc.kwota, currency)),
-            h(
-              Text,
-              { style: [styles.cell, { width: "35%" }] },
-              zc.platnoscInna ? (zc.opisPlatnosci ?? "—") : formaPlatnosci(zc.formaPlatnosci),
-            ),
+        tableContainer(
+          tableHeader([
+            tableCell("Data zapłaty częściowej", { width: "30%", isHeader: true }),
+            tableCell("Kwota", { width: "35%", align: "right", isHeader: true }),
+            tableCell("Forma płatności", { width: "35%", isHeader: true }),
+          ]),
+          pmt.zaplataCzesciowa.map((zc, i) =>
+            tableRow([
+              tableCell(fmtDate(zc.data), { width: "30%" }),
+              tableCell(fmtMoneyStr(zc.kwota, currency), { width: "35%", align: "right" }),
+              tableCell(
+                zc.platnoscInna ? (zc.opisPlatnosci ?? "—") : formaPlatnosci(zc.formaPlatnosci),
+                { width: "35%" },
+              ),
+            ], { index: i }),
           ),
         ),
       )
