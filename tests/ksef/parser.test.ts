@@ -304,3 +304,47 @@ suite("parseInvoiceFa3: full fixture", () => {
     assert.ok(inv.daneFaKorygowanej.length === 2);
   });
 });
+
+suite("parseInvoiceFa3: parser extensions", () => {
+  test("parses TP flag", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.strictEqual(inv.tp, true);
+  });
+
+  test("TP defaults to false when absent", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3.xml"), "K");
+    assert.strictEqual(inv.tp, false);
+  });
+
+  test("parses P_6A per-line delivery date", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.strictEqual(inv.lineItems[0].p6a, "2026-04-05");
+    assert.strictEqual(inv.lineItems[1].p6a, null);
+  });
+
+  test("parses P_14_*W tax-in-PLN", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    const row23 = inv.taxSummary.find((r) => r.label.startsWith("23%"));
+    assert.ok(row23);
+    assert.strictEqual(row23!.kwotaPodatkuPLN, 793.96);
+    const row8 = inv.taxSummary.find((r) => r.label.startsWith("8%"));
+    assert.ok(row8);
+    assert.strictEqual(row8!.kwotaPodatkuPLN, 69);
+  });
+
+  test("parses WZ per line item", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.strictEqual(inv.lineItems[0].wz, "WZ/2026/04/001");
+    assert.strictEqual(inv.lineItems[1].wz, null);
+  });
+
+  test("parses OkresFa", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3_extended.xml"), "K");
+    assert.strictEqual(inv.okresFa, "2026-04-01/2026-04-30");
+  });
+
+  test("OkresFa defaults to null when absent", () => {
+    const inv = parseInvoiceFa3(loadFixture("sample_fa3.xml"), "K");
+    assert.strictEqual(inv.okresFa, null);
+  });
+});
