@@ -39,8 +39,8 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
           script: |
+            set -e
             cd /opt/zhr-ksef
             git pull origin main
             docker compose --env-file .env.production -f docker-compose.prod.yml build
