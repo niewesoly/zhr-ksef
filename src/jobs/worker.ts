@@ -4,6 +4,7 @@ import { logger } from "../lib/logger.js";
 import { createRedisConnection } from "./connection.js";
 import type { CertCheckJobData, PdfJobData, SyncJobData } from "./queues.js";
 import { handleSyncJob } from "./sync-job.js";
+import { startSyncScheduler, stopSyncScheduler } from "./sync-scheduler.js";
 
 const connection = createRedisConnection();
 
@@ -32,8 +33,13 @@ for (const w of workers) {
 
 logger.info({ queues: workers.map((w) => w.name) }, "worker started");
 
+startSyncScheduler().catch((err) =>
+  logger.error({ err }, "failed to start sync scheduler"),
+);
+
 async function shutdown(signal: NodeJS.Signals): Promise<void> {
   logger.info({ signal }, "worker shutting down");
+  await stopSyncScheduler();
   await Promise.all(workers.map((w) => w.close()));
   await connection.quit();
   await pg.end({ timeout: 5 });
