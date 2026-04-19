@@ -1,0 +1,37 @@
+request:
+  variables:
+    - name: tenantId
+      value: ""
+    - name: invoiceId
+      value: ""
+    - name: syncRunId
+      value: ""
+  scripts:
+    - type: before-request
+      code: |-
+        const apiKey = bru.getEnvVar("apiKey");
+        const adminKey = bru.getEnvVar("adminKey");
+        // If the request already has X-Admin-Key, leave it alone
+        const existingAdmin = req.getHeader("X-Admin-Key");
+        if (!existingAdmin && apiKey) {
+          req.setHeader("X-API-Key", apiKey);
+        }
+docs:
+  content: |-
+    # zhr-ksef API Collection
+
+    Polish national e-invoicing (KSeF) integration microservice.
+
+    ## Quick start
+
+    1. Select the **Local** environment
+    2. Set `adminKey` to your `ADMIN_API_KEY` value
+    3. Run **Create Tenant** — it auto-captures `tenantId` and `apiKey`
+    4. Exercise any endpoint
+
+    ## Auth model
+
+    - **Admin endpoints** (create/delete tenant): `X-Admin-Key` header
+    - **Tenant endpoints** (everything else): `X-API-Key` header (`<id>_<secret>`)
+    - The collection-level pre-request script auto-injects `X-API-Key` on every request
+  type: text/markdown

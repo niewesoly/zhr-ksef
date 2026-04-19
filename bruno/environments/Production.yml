@@ -1,0 +1,9 @@
+variables:
+  - name: baseUrl
+    value: https://ksef.example.com
+  - name: adminKey
+    value: ""
+    secret: true
+  - name: apiKey
+    value: ""
+    secret: true

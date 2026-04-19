@@ -1,0 +1,36 @@
+info:
+  name: Update Tenant
+  type: http
+  seq: 3
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/api/v1/tenants/{{tenantId}}"
+  headers:
+    - name: content-type
+      value: application/json
+    - name: X-API-Key
+      value: "{{apiKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Updated Tenant Name"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("returns 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+        test("tenant name is updated", function() {
+          expect(res.body.tenant.name).to.equal("Updated Tenant Name");
+        });
+
+settings:
+  encodeUrl: true

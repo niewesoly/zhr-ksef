@@ -74,6 +74,8 @@ export interface InvoiceLineItem {
   gtu: string | null;
   p12Zal15: boolean;
   stanPrzed: boolean;
+  p6a: string | null;
+  wz: string | null;
 }
 
 export interface TaxSummaryRow {
@@ -82,6 +84,7 @@ export interface TaxSummaryRow {
   kwotaNetto: number;
   kwotaPodatku: number;
   kwotaBrutto: number;
+  kwotaPodatkuPLN: number | null;
 }
 
 export interface AdditionalInfo {
@@ -129,6 +132,12 @@ export interface Payment {
 }
 
 export interface DaneFaKorygowanej {
+  numer: string | null;
+  dataWystawienia: string | null;
+  nrKsef: string | null;
+}
+
+export interface FakturaZaliczkowaRef {
   numer: string | null;
   dataWystawienia: string | null;
   nrKsef: string | null;
@@ -242,9 +251,12 @@ export interface InvoiceFa3 {
   przyczynaKorekty: string | null;
   okresFaKorygowanej: string | null;
   adnotacje: Adnotacje | null;
+  tp: boolean;
   rozliczenie: Rozliczenie | null;
   warunkiTransakcji: WarunkiTransakcji | null;
   stopka: Stopka | null;
+  fakturaZaliczkowa: FakturaZaliczkowaRef[];
+  okresFa: string | null;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -287,21 +299,22 @@ const COUNTRY_NAME: Record<string, string> = {
 const VAT_BUCKETS: ReadonlyArray<{
   net: string;
   tax: string | null;
+  taxPLN: string | null;
   label: string;
 }> = [
-  { net: "P_13_1", tax: "P_14_1", label: "23% lub 22%" },
-  { net: "P_13_2", tax: "P_14_2", label: "8% lub 7%" },
-  { net: "P_13_3", tax: "P_14_3", label: "5%" },
-  { net: "P_13_4", tax: "P_14_4", label: "4% lub 3%" },
-  { net: "P_13_5", tax: "P_14_5", label: "OSS" },
-  { net: "P_13_6_1", tax: null, label: "0% (krajowe)" },
-  { net: "P_13_6_2", tax: null, label: "0% WDT" },
-  { net: "P_13_6_3", tax: null, label: "0% eksport" },
-  { net: "P_13_7", tax: null, label: "zwolnione od podatku" },
-  { net: "P_13_8", tax: null, label: "np. z wył. art. 100 ust. 1 pkt 4" },
-  { net: "P_13_9", tax: null, label: "np. art. 100 ust. 1 pkt 4" },
-  { net: "P_13_10", tax: null, label: "odwrotne obciążenie" },
-  { net: "P_13_11", tax: null, label: "marża" },
+  { net: "P_13_1", tax: "P_14_1", taxPLN: "P_14_1W", label: "23% lub 22%" },
+  { net: "P_13_2", tax: "P_14_2", taxPLN: "P_14_2W", label: "8% lub 7%" },
+  { net: "P_13_3", tax: "P_14_3", taxPLN: "P_14_3W", label: "5%" },
+  { net: "P_13_4", tax: "P_14_4", taxPLN: "P_14_4W", label: "4% lub 3%" },
+  { net: "P_13_5", tax: "P_14_5", taxPLN: "P_14_5W", label: "OSS" },
+  { net: "P_13_6_1", tax: null, taxPLN: null, label: "0% (krajowe)" },
+  { net: "P_13_6_2", tax: null, taxPLN: null, label: "0% WDT" },
+  { net: "P_13_6_3", tax: null, taxPLN: null, label: "0% eksport" },
+  { net: "P_13_7", tax: null, taxPLN: null, label: "zwolnione od podatku" },
+  { net: "P_13_8", tax: null, taxPLN: null, label: "np. z wył. art. 100 ust. 1 pkt 4" },
+  { net: "P_13_9", tax: null, taxPLN: null, label: "np. art. 100 ust. 1 pkt 4" },
+  { net: "P_13_10", tax: null, taxPLN: null, label: "odwrotne obciążenie" },
+  { net: "P_13_11", tax: null, taxPLN: null, label: "marża" },
 ];
 
 // ─── Parser ───────────────────────────────────────────────────────────────────
@@ -327,6 +340,7 @@ const parser = new XMLParser({
       "StopkaFaktury",
       "Rejestry",
       "Transport",
+      "ZamowienieWi662",
     ].some((n) => name.endsWith(n)),
   parseAttributeValue: true,
   parseTagValue: true,
@@ -443,6 +457,8 @@ function parseLineItems(fa: Record<string, unknown>): InvoiceLineItem[] {
       gtu: findFieldString(row, "GTU"),
       p12Zal15: findFieldString(row, "P_12_Zal_15") === "1",
       stanPrzed: findFieldString(row, "StanPrzed") === "1",
+      p6a: findFieldString(row, "P_6A"),
+      wz: findFieldString(row, "WZ"),
     } satisfies InvoiceLineItem;
   }).filter((x): x is InvoiceLineItem => x !== null);
 }
@@ -454,6 +470,7 @@ function parseTaxSummary(fa: Record<string, unknown>): TaxSummaryRow[] {
   for (const bucket of VAT_BUCKETS) {
     const net = findFieldNumber(fa, bucket.net);
     const tax = bucket.tax ? findFieldNumber(fa, bucket.tax) : null;
+    const taxPLN = bucket.taxPLN ? findFieldNumber(fa, bucket.taxPLN) : null;
     if (net == null && tax == null) continue;
     const netVal = net ?? 0;
     const taxVal = tax ?? 0;
@@ -465,6 +482,7 @@ function parseTaxSummary(fa: Record<string, unknown>): TaxSummaryRow[] {
       kwotaNetto: netVal,
       kwotaPodatku: taxVal,
       kwotaBrutto: netVal + taxVal,
+      kwotaPodatkuPLN: taxPLN,
     });
   }
 
@@ -552,6 +570,16 @@ function parseDaneFaKorygowanej(fa: Record<string, unknown>): DaneFaKorygowanej[
       numer: findFieldString(n, "NrFaKorygowanej"),
       dataWystawienia: findFieldString(n, "DataWystFaKorygowanej"),
       nrKsef: findFieldString(n, "NrKSeFFaKorygowanej"),
+    }));
+}
+
+function parseFakturaZaliczkowa(fa: Record<string, unknown>): FakturaZaliczkowaRef[] {
+  return toArray(findField(fa, "ZamowienieWi662"))
+    .filter(isRecord)
+    .map((n) => ({
+      numer: findFieldString(n, "NrZamowienia") ?? findFieldString(n, "NrWZ"),
+      dataWystawienia: findFieldString(n, "DataZamowienia"),
+      nrKsef: findFieldString(n, "NrKSeF"),
     }));
 }
 
@@ -816,8 +844,11 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     przyczynaKorekty: correctionReason,
     okresFaKorygowanej,
     adnotacje: parseAdnotacje(fa),
+    tp: findFieldString(fa, "TP") === "1",
     rozliczenie: parseRozliczenie(fa),
     warunkiTransakcji: parseWarunkiTransakcji(fa),
     stopka: parseStopka(faktura),
+    fakturaZaliczkowa: parseFakturaZaliczkowa(fa),
+    okresFa: findFieldString(fa, "OkresFa"),
   };
 }

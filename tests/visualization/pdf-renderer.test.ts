@@ -92,13 +92,47 @@ test("renderInvoicePdf handles a minimal invoice with zero line items", async ()
     przyczynaKorekty: null,
     okresFaKorygowanej: null,
     adnotacje: null,
+    tp: false,
     rozliczenie: null,
     warunkiTransakcji: null,
     stopka: null,
+    fakturaZaliczkowa: [],
+    okresFa: null,
   };
 
   const buf = await renderInvoicePdf(minimal);
   assertValidPdf(buf, "minimal invoice");
+});
+
+test("renderInvoicePdf brutto mode produces valid PDF without regression", async () => {
+  const xml = loadFixture("sample_fa3_brutto.xml");
+  const invoice = parseInvoiceFa3(xml, "TEST-BRUTTO-TABLE");
+  const buf = await renderInvoicePdf(invoice);
+  assertValidPdf(buf, "brutto table regression");
+  assert.ok(buf.length > 2048, "brutto PDF with tables should be substantial");
+});
+
+test("renderInvoicePdf extended fixture with all sections produces valid PDF", async () => {
+  const xml = loadFixture("sample_fa3_extended.xml");
+  const invoice = parseInvoiceFa3(xml, "TEST-EXT-TABLE");
+  const buf = await renderInvoicePdf(invoice);
+  assertValidPdf(buf, "extended table regression");
+  assert.ok(buf.length > 2048, "extended PDF with tables should be substantial");
+});
+
+test("renderInvoicePdf extended fixture exercises all parity sections", async () => {
+  const xml = loadFixture("sample_fa3_extended.xml");
+  const invoice = parseInvoiceFa3(xml, "TEST-PARITY");
+  assert.ok(invoice.correctionReason, "fixture must have correctionReason");
+  assert.ok(invoice.additionalInfo.length > 0, "fixture must have additionalInfo");
+  assert.ok(invoice.rozliczenie, "fixture must have rozliczenie");
+  assert.ok(invoice.rozliczenie!.obciazenia.length > 0, "fixture must have obciazenia");
+  assert.ok(invoice.rozliczenie!.odliczenia.length > 0, "fixture must have odliczenia");
+  assert.ok(invoice.seller.daneRejestrowe, "fixture seller must have daneRejestrowe");
+
+  const buf = await renderInvoicePdf(invoice);
+  assertValidPdf(buf, "parity regression");
+  assert.ok(buf.length > 4096, "PDF with all sections should be substantial");
 });
 
 test("renderInvoicePdf called twice with the same fixture returns valid PDFs both times", async () => {

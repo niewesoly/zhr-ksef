@@ -68,8 +68,16 @@ export function validateCertAndKey(
   }
 
   // Verify the private key produces the same public key as the cert.
-  const certPubPem = createPublicKey(cert.publicKey).export({ type: "spki", format: "pem" }) as string;
-  const keyPubPem = createPublicKey(privateKey).export({ type: "spki", format: "pem" }) as string;
+  let certPubPem: string;
+  let keyPubPem: string;
+  try {
+    certPubPem = cert.publicKey.export({ type: "spki", format: "pem" }) as string;
+    keyPubPem = createPublicKey(privateKey).export({ type: "spki", format: "pem" }) as string;
+  } catch (err) {
+    throw new CertificateValidationError(
+      `Nie można porównać kluczy: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
   if (certPubPem.trim() !== keyPubPem.trim()) {
     throw new CertificateValidationError(
       "Klucz prywatny nie pasuje do certyfikatu (public key mismatch).",

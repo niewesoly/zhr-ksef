@@ -1,0 +1,59 @@
+info:
+  name: Preview HTML
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/preview/html"
+  headers:
+    - name: content-type
+      value: text/xml
+  body:
+    type: xml
+    data: |-
+      <?xml version="1.0" encoding="UTF-8"?>
+      <Faktura xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/">
+        <Naglowek>
+          <KodFormularza kodSystemowy="FA (3)" wersjaSchemy="1-0E">FA</KodFormularza>
+          <WariantFormularza>3</WariantFormularza>
+          <DataWytworzeniaFa>2026-04-19T10:00:00</DataWytworzeniaFa>
+          <SystemInfo>Bruno Test</SystemInfo>
+        </Naglowek>
+        <Podmiot1>
+          <DaneIdentyfikacyjne><NIP>1234567890</NIP><Nazwa>Sprzedawca Sp. z o.o.</Nazwa></DaneIdentyfikacyjne>
+          <Adres><KodKraju>PL</KodKraju><AdresL1>ul. Testowa 1, 00-001 Warszawa</AdresL1></Adres>
+        </Podmiot1>
+        <Podmiot2>
+          <DaneIdentyfikacyjne><NIP>0987654321</NIP><Nazwa>Nabywca S.A.</Nazwa></DaneIdentyfikacyjne>
+          <Adres><KodKraju>PL</KodKraju><AdresL1>ul. Przykładowa 2, 00-002 Kraków</AdresL1></Adres>
+        </Podmiot2>
+        <Fa>
+          <KodWaluty>PLN</KodWaluty>
+          <P_1>2026-04-19</P_1>
+          <P_2>FV/2026/04/001</P_2>
+          <P_15>1230.00</P_15>
+          <FaWiersz>
+            <NrWierszaFa>1</NrWierszaFa>
+            <P_7>Usługa testowa</P_7>
+            <P_8A>szt.</P_8A>
+            <P_8B>10</P_8B>
+            <P_9A>100.00</P_9A>
+            <P_11>1000.00</P_11>
+            <P_12>23</P_12>
+          </FaWiersz>
+        </Fa>
+      </Faktura>
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("returns 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true

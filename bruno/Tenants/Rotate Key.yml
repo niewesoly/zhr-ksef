@@ -1,0 +1,37 @@
+info:
+  name: Rotate Key
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/tenants/{{tenantId}}/rotate-key"
+  headers:
+    - name: X-API-Key
+      value: "{{apiKey}}"
+  body:
+    type: none
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 200) {
+          bru.setVar("apiKey", res.body.apiKey);
+          bru.setEnvVar("apiKey", res.body.apiKey);
+        }
+    - type: tests
+      code: |-
+        test("returns 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+        test("returns new apiKey and grace period", function() {
+          expect(res.body.apiKey).to.be.a("string");
+          expect(res.body.gracePeriodHours).to.be.a("number");
+        });
+
+settings:
+  encodeUrl: true

@@ -1,0 +1,32 @@
+info:
+  name: Trigger Incremental Sync
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/tenants/{{tenantId}}/sync"
+  headers:
+    - name: X-API-Key
+      value: "{{apiKey}}"
+  body:
+    type: none
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("returns 202 Accepted", function() {
+          expect(res.status).to.equal(202);
+        });
+
+        test("response has job details", function() {
+          expect(res.body.jobId).to.be.a("string");
+          expect(res.body.kind).to.equal("incremental");
+          expect(res.body.tenantId).to.be.a("string");
+        });
+
+settings:
+  encodeUrl: true

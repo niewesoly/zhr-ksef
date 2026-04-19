@@ -61,7 +61,6 @@ const STYLES = `
 
   .ksef-section {
     margin: 8pt 0;
-    page-break-inside: avoid;
   }
   .ksef-section__title {
     font-size: 10pt;
@@ -157,6 +156,9 @@ const STYLES = `
   }
   .ksef-table--wiersze td {
     font-size: 8.5pt;
+  }
+  .ksef-table thead {
+    display: table-header-group;
   }
 
   .ksef-total {
@@ -347,6 +349,9 @@ const Naglowek: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
           <div class="ksef-naglowek__label">Numer faktury:</div>
           <div class="ksef-naglowek__number">{invoice.invoiceNumber ?? "—"}</div>
           <div class="ksef-naglowek__rodzaj">{rodzajLabel}</div>
+          {invoice.tp ? (
+            <div style="font-size: 8pt; color: #b71c1c;">Podmiot powiązany (TP)</div>
+          ) : null}
           {invoice.ksefNumber ? (
             <div class="ksef-naglowek__ksef">
               Numer KSeF: <strong>{invoice.ksefNumber}</strong>
@@ -422,6 +427,12 @@ const Szczegoly: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
             <dd>{fmtDate(invoice.saleDate)}</dd>
           </>
         ) : null}
+        {invoice.okresFa ? (
+          <>
+            <dt>Okres dostawy / usługi</dt>
+            <dd>{invoice.okresFa}</dd>
+          </>
+        ) : null}
         {invoice.currency ? (
           <>
             <dt>Kod waluty</dt>
@@ -438,6 +449,7 @@ const Wiersze: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   if (lineItems.length === 0) return null;
   const priceLabel = bruttoMode ? "Cena brutto" : "Cena netto";
   const hasGtu = lineItems.some((r) => r.gtu != null);
+  const hasRabat = lineItems.some((r) => r.rabat != null);
   return (
     <div class="ksef-section">
       <h3 class="ksef-section__title">Pozycje</h3>
@@ -452,6 +464,7 @@ const Wiersze: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
             <th class="num">Ilość</th>
             <th>Miara</th>
             <th class="num">{priceLabel}</th>
+            {hasRabat ? <th class="num">Rabat %</th> : null}
             <th class="num">Wartość netto</th>
             <th class="num">Wartość brutto</th>
             <th class="num">Stawka</th>
@@ -472,10 +485,13 @@ const Wiersze: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
                   {row.nazwa ?? "—"}
                   {row.p12Zal15 ? <span class="ksef-badge">zał. 15</span> : null}
                   {row.stanPrzed ? <span class="ksef-badge">stan przed</span> : null}
+                  {row.p6a ? <span class="ksef-note"> [dostawa: {fmtDate(row.p6a)}]</span> : null}
+                  {row.wz ? <span class="ksef-note"> [WZ: {row.wz}]</span> : null}
                 </td>
                 <td class="num">{fmtQty(row.ilosc)}</td>
                 <td>{row.miara ?? "—"}</td>
                 <td class="num">{fmtMoney(cena, currency)}</td>
+                {hasRabat ? <td class="num">{row.rabat != null ? `${row.rabat}%` : "—"}</td> : null}
                 <td class="num">{fmtMoney(row.wartoscNetto, currency)}</td>
                 <td class="num">{fmtMoney(row.wartoscBrutto, currency)}</td>
                 <td class="num">{stawkaLabel}</td>
@@ -512,6 +528,7 @@ const Adnotacje: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
 const PodsumowanieStawek: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   const { taxSummary, currency } = invoice;
   if (taxSummary.length === 0) return null;
+  const hasPLN = taxSummary.some((r) => r.kwotaPodatkuPLN != null);
   return (
     <div class="ksef-section">
       <h3 class="ksef-section__title">Podsumowanie stawek podatku</h3>
@@ -522,6 +539,7 @@ const PodsumowanieStawek: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
             <th>Stawka podatku</th>
             <th class="num">Kwota netto</th>
             <th class="num">Kwota podatku</th>
+            {hasPLN ? <th class="num">Kwota podatku (PLN)</th> : null}
             <th class="num">Kwota brutto</th>
           </tr>
         </thead>
@@ -532,6 +550,7 @@ const PodsumowanieStawek: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
               <td>{row.label}</td>
               <td class="num">{fmtMoney(row.kwotaNetto, currency)}</td>
               <td class="num">{fmtMoney(row.kwotaPodatku, currency)}</td>
+              {hasPLN ? <td class="num">{fmtMoney(row.kwotaPodatkuPLN, "PLN")}</td> : null}
               <td class="num">{fmtMoney(row.kwotaBrutto, currency)}</td>
             </tr>
           ))}

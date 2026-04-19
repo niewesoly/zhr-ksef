@@ -54,6 +54,8 @@
   <Podmiot2>
     <DaneIdentyfikacyjne>
       <NIP>6808208874</NIP>
+      <KodUE>PL</KodUE>
+      <NrVatUE>6808208874</NrVatUE>
       <Nazwa>Jednostka Samorządu Terytorialnego — Test</Nazwa>
     </DaneIdentyfikacyjne>
     <Adres>
@@ -108,11 +110,14 @@
     <P_1M>Warszawa</P_1M>
     <P_2>FA/EXT/2026/04/0001</P_2>
     <P_6>2026-04-01</P_6>
+    <OkresFa>2026-04-01/2026-04-30</OkresFa>
 
     <!-- RodzajFaktury=KOR + OkresFaKorygowanej => "korygująca zbiorcza
          (rabat)" label path in the renderer. -->
     <RodzajFaktury>KOR</RodzajFaktury>
+    <TP>1</TP>
     <OkresFaKorygowanej>2026-01</OkresFaKorygowanej>
+    <PrzyczynaKorekty>Błędna cena jednostkowa w pozycji 1</PrzyczynaKorekty>
 
     <!-- Two DaneFaKorygowanej rows => array rendering. -->
     <DaneFaKorygowanej>
@@ -130,8 +135,10 @@
          produces two rows in PodsumowanieStawek. -->
     <P_13_1>800.00</P_13_1>
     <P_14_1>184.00</P_14_1>
+    <P_14_1W>793.96</P_14_1W>
     <P_13_2>200.00</P_13_2>
     <P_14_2>16.00</P_14_2>
+    <P_14_2W>69.00</P_14_2W>
     <P_15>1200.00</P_15>
 
     <!-- Three FaWiersz: first two have netto (P_9A + P_11),
@@ -151,6 +158,8 @@
       <PKWiU>70.22.1</PKWiU>
       <GTU>GTU_12</GTU>
       <P_12_Zal_15>1</P_12_Zal_15>
+      <P_6A>2026-04-05</P_6A>
+      <WZ>WZ/2026/04/001</WZ>
     </FaWiersz>
     <FaWiersz>
       <NrWierszaFa>2</NrWierszaFa>

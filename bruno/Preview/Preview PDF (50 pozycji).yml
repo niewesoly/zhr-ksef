@@ -1,0 +1,432 @@
+info:
+  name: Preview PDF (50 pozycji)
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/preview/pdf"
+  headers:
+    - name: content-type
+      value: text/xml
+  body:
+    type: xml
+    data: |-
+      <?xml version="1.0" encoding="UTF-8"?>
+      <Faktura xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/">
+        <Naglowek>
+          <KodFormularza kodSystemowy="FA (3)" wersjaSchemy="1-0E">FA</KodFormularza>
+          <WariantFormularza>3</WariantFormularza>
+          <DataWytworzeniaFa>2026-04-19T12:00:00</DataWytworzeniaFa>
+          <SystemInfo>Bruno Test — 50 pozycji</SystemInfo>
+        </Naglowek>
+        <Podmiot1>
+          <PrefiksPodatnika>PL</PrefiksPodatnika>
+          <DaneIdentyfikacyjne>
+            <NIP>5265877635</NIP>
+            <Nazwa>Hurtownia Materiałów Budowlanych Sp. z o.o.</Nazwa>
+          </DaneIdentyfikacyjne>
+          <Adres>
+            <KodKraju>PL</KodKraju>
+            <AdresL1>ul. Przemysłowa 42</AdresL1>
+            <AdresL2>02-200 Warszawa</AdresL2>
+          </Adres>
+          <DaneKontaktowe>
+            <Email>biuro@hurtownia.example</Email>
+            <Telefon>22-555-00-01</Telefon>
+          </DaneKontaktowe>
+          <DaneRejestrowe>
+            <KRS>0000654321</KRS>
+            <REGON>987654321</REGON>
+            <NazwaPelna>Hurtownia Materiałów Budowlanych Spółka z ograniczoną odpowiedzialnością</NazwaPelna>
+          </DaneRejestrowe>
+          <StatusInfoPodatnika>1</StatusInfoPodatnika>
+        </Podmiot1>
+        <Podmiot2>
+          <DaneIdentyfikacyjne>
+            <NIP>6808208874</NIP>
+            <Nazwa>Firma Budowlana KONSTRUKT S.A.</Nazwa>
+          </DaneIdentyfikacyjne>
+          <Adres>
+            <KodKraju>PL</KodKraju>
+            <AdresL1>ul. Budowlana 15</AdresL1>
+            <AdresL2>30-100 Kraków</AdresL2>
+          </Adres>
+          <NrKlienta>KL-0042</NrKlienta>
+        </Podmiot2>
+        <Fa>
+          <KodWaluty>PLN</KodWaluty>
+          <P_1>2026-04-19</P_1>
+          <P_1M>Warszawa</P_1M>
+          <P_2>FV/2026/04/0050</P_2>
+          <P_6>2026-04-18</P_6>
+          <TP>1</TP>
+          <P_13_1>108520.00</P_13_1>
+          <P_14_1>24959.60</P_14_1>
+          <P_13_2>4250.00</P_13_2>
+          <P_14_2>340.00</P_14_2>
+          <P_15>138069.60</P_15>
+          <FaWiersz>
+            <NrWierszaFa>1</NrWierszaFa>
+            <P_7>Cement portlandzki CEM I 42,5R — paleta 42 worki</P_7>
+            <P_8A>pal.</P_8A><P_8B>5</P_8B>
+            <P_9A>680.00</P_9A><P_11>3400.00</P_11><P_12>23</P_12>
+            <P_6A>2026-04-15</P_6A>
+            <WZ>WZ/2026/04/101</WZ>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>2</NrWierszaFa>
+            <P_7>Piasek budowlany 0-2mm — wywrotka 25t</P_7>
+            <P_8A>t</P_8A><P_8B>25</P_8B>
+            <P_9A>85.00</P_9A><P_11>2125.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>3</NrWierszaFa>
+            <P_7>Żwir płukany 2-8mm</P_7>
+            <P_8A>t</P_8A><P_8B>18</P_8B>
+            <P_9A>95.00</P_9A><P_11>1710.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>4</NrWierszaFa>
+            <P_7>Stal zbrojeniowa B500SP fi 12mm — pręty 12m</P_7>
+            <P_8A>t</P_8A><P_8B>3.5</P_8B>
+            <P_9A>3200.00</P_9A><P_11>11200.00</P_11><P_12>23</P_12>
+            <GTU>GTU_01</GTU>
+            <P_10>5</P_10>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>5</NrWierszaFa>
+            <P_7>Stal zbrojeniowa B500SP fi 8mm — pręty 12m</P_7>
+            <P_8A>t</P_8A><P_8B>2</P_8B>
+            <P_9A>3350.00</P_9A><P_11>6700.00</P_11><P_12>23</P_12>
+            <GTU>GTU_01</GTU>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>6</NrWierszaFa>
+            <P_7>Cegła klinkierowa RF grafitowa</P_7>
+            <P_8A>szt.</P_8A><P_8B>2000</P_8B>
+            <P_9A>3.20</P_9A><P_11>6400.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>7</NrWierszaFa>
+            <P_7>Pustak ceramiczny MAX 288×188×220</P_7>
+            <P_8A>szt.</P_8A><P_8B>1500</P_8B>
+            <P_9A>4.80</P_9A><P_11>7200.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>8</NrWierszaFa>
+            <P_7>Bloczek betonowy fundamentowy 38×24×12</P_7>
+            <P_8A>szt.</P_8A><P_8B>800</P_8B>
+            <P_9A>5.50</P_9A><P_11>4400.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>9</NrWierszaFa>
+            <P_7>Beton towarowy C25/30 — dostawa pompą</P_7>
+            <P_8A>m³</P_8A><P_8B>35</P_8B>
+            <P_9A>380.00</P_9A><P_11>13300.00</P_11><P_12>23</P_12>
+            <P_6A>2026-04-16</P_6A>
+            <WZ>WZ/2026/04/102</WZ>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>10</NrWierszaFa>
+            <P_7>Beton towarowy C16/20</P_7>
+            <P_8A>m³</P_8A><P_8B>20</P_8B>
+            <P_9A>310.00</P_9A><P_11>6200.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>11</NrWierszaFa>
+            <P_7>Styropian EPS 100 fasadowy gr. 15cm</P_7>
+            <P_8A>m²</P_8A><P_8B>200</P_8B>
+            <P_9A>32.00</P_9A><P_11>6400.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>12</NrWierszaFa>
+            <P_7>Styropian EPS 70 podłogowy gr. 10cm</P_7>
+            <P_8A>m²</P_8A><P_8B>150</P_8B>
+            <P_9A>22.00</P_9A><P_11>3300.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>13</NrWierszaFa>
+            <P_7>Wełna mineralna 035 gr. 20cm — rolki</P_7>
+            <P_8A>m²</P_8A><P_8B>120</P_8B>
+            <P_9A>45.00</P_9A><P_11>5400.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>14</NrWierszaFa>
+            <P_7>Folia PE budowlana 0,3mm czarna</P_7>
+            <P_8A>m²</P_8A><P_8B>500</P_8B>
+            <P_9A>1.80</P_9A><P_11>900.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>15</NrWierszaFa>
+            <P_7>Papa termozgrzewalna PV250 S52 SBS</P_7>
+            <P_8A>m²</P_8A><P_8B>300</P_8B>
+            <P_9A>18.50</P_9A><P_11>5550.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>16</NrWierszaFa>
+            <P_7>Membrana dachowa paroprzepuszczalna 160g/m²</P_7>
+            <P_8A>m²</P_8A><P_8B>250</P_8B>
+            <P_9A>4.20</P_9A><P_11>1050.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>17</NrWierszaFa>
+            <P_7>Drewno konstrukcyjne C24 KVH 60×160mm — 6m</P_7>
+            <P_8A>m³</P_8A><P_8B>4</P_8B>
+            <P_9A>2100.00</P_9A><P_11>8400.00</P_11><P_12>23</P_12>
+            <GTU>GTU_01</GTU>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>18</NrWierszaFa>
+            <P_7>Łaty dachowe impregnowane 40×60mm — 4m</P_7>
+            <P_8A>mb</P_8A><P_8B>500</P_8B>
+            <P_9A>6.50</P_9A><P_11>3250.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>19</NrWierszaFa>
+            <P_7>Kontrłaty 25×50mm — 4m</P_7>
+            <P_8A>mb</P_8A><P_8B>400</P_8B>
+            <P_9A>3.80</P_9A><P_11>1520.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>20</NrWierszaFa>
+            <P_7>Dachówka ceramiczna Creaton RATIO antracyt</P_7>
+            <P_8A>szt.</P_8A><P_8B>800</P_8B>
+            <P_9A>4.90</P_9A><P_11>3920.00</P_11><P_12>23</P_12>
+            <P_10>3</P_10>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>21</NrWierszaFa>
+            <P_7>Gąsior kalenicowy ceramiczny</P_7>
+            <P_8A>szt.</P_8A><P_8B>40</P_8B>
+            <P_9A>28.00</P_9A><P_11>1120.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>22</NrWierszaFa>
+            <P_7>Okno dachowe VELUX GZL 78×118 MK06</P_7>
+            <P_8A>szt.</P_8A><P_8B>4</P_8B>
+            <P_9A>1850.00</P_9A><P_11>7400.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>23</NrWierszaFa>
+            <P_7>Kołnierz uszczelniający do okna dachowego</P_7>
+            <P_8A>szt.</P_8A><P_8B>4</P_8B>
+            <P_9A>320.00</P_9A><P_11>1280.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>24</NrWierszaFa>
+            <P_7>Rura kanalizacyjna PVC-U fi 160mm — 6m</P_7>
+            <P_8A>szt.</P_8A><P_8B>20</P_8B>
+            <P_9A>65.00</P_9A><P_11>1300.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>25</NrWierszaFa>
+            <P_7>Rura kanalizacyjna PVC-U fi 110mm — 3m</P_7>
+            <P_8A>szt.</P_8A><P_8B>30</P_8B>
+            <P_9A>28.00</P_9A><P_11>840.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>26</NrWierszaFa>
+            <P_7>Studzienka rewizyjna DN 425 z pokrywą</P_7>
+            <P_8A>szt.</P_8A><P_8B>3</P_8B>
+            <P_9A>480.00</P_9A><P_11>1440.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>27</NrWierszaFa>
+            <P_7>Rura PP-R fi 20mm PN20 — 4m</P_7>
+            <P_8A>szt.</P_8A><P_8B>50</P_8B>
+            <P_9A>12.00</P_9A><P_11>600.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>28</NrWierszaFa>
+            <P_7>Rura PP-R fi 25mm PN20 — 4m</P_7>
+            <P_8A>szt.</P_8A><P_8B>30</P_8B>
+            <P_9A>16.00</P_9A><P_11>480.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>29</NrWierszaFa>
+            <P_7>Zawór kulowy mosięzny fi 20mm</P_7>
+            <P_8A>szt.</P_8A><P_8B>15</P_8B>
+            <P_9A>32.00</P_9A><P_11>480.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>30</NrWierszaFa>
+            <P_7>Kabel YDY 3×2,5mm² — 100m</P_7>
+            <P_8A>kr.</P_8A><P_8B>5</P_8B>
+            <P_9A>280.00</P_9A><P_11>1400.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>31</NrWierszaFa>
+            <P_7>Kabel YDY 5×1,5mm² — 100m</P_7>
+            <P_8A>kr.</P_8A><P_8B>3</P_8B>
+            <P_9A>250.00</P_9A><P_11>750.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>32</NrWierszaFa>
+            <P_7>Rozdzielnica natynkowa 3×12 IP65</P_7>
+            <P_8A>szt.</P_8A><P_8B>2</P_8B>
+            <P_9A>185.00</P_9A><P_11>370.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>33</NrWierszaFa>
+            <P_7>Wyłącznik nadprądowy B16 1P</P_7>
+            <P_8A>szt.</P_8A><P_8B>20</P_8B>
+            <P_9A>18.50</P_9A><P_11>370.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>34</NrWierszaFa>
+            <P_7>Wyłącznik różnicowo-prądowy 25A 30mA 2P</P_7>
+            <P_8A>szt.</P_8A><P_8B>6</P_8B>
+            <P_9A>95.00</P_9A><P_11>570.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>35</NrWierszaFa>
+            <P_7>Puszka podtynkowa fi 60mm głęboka</P_7>
+            <P_8A>szt.</P_8A><P_8B>100</P_8B>
+            <P_9A>1.20</P_9A><P_11>120.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>36</NrWierszaFa>
+            <P_7>Klej do płytek elastyczny C2TE S1 — 25kg</P_7>
+            <P_8A>szt.</P_8A><P_8B>40</P_8B>
+            <P_9A>42.00</P_9A><P_11>1680.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>37</NrWierszaFa>
+            <P_7>Fuga cementowa antracyt 5kg</P_7>
+            <P_8A>szt.</P_8A><P_8B>15</P_8B>
+            <P_9A>28.00</P_9A><P_11>420.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>38</NrWierszaFa>
+            <P_7>Gładź szpachlowa gipsowa finish — 20kg</P_7>
+            <P_8A>szt.</P_8A><P_8B>30</P_8B>
+            <P_9A>35.00</P_9A><P_11>1050.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>39</NrWierszaFa>
+            <P_7>Farba lateksowa biała matowa 10L</P_7>
+            <P_8A>szt.</P_8A><P_8B>12</P_8B>
+            <P_9A>145.00</P_9A><P_11>1740.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>40</NrWierszaFa>
+            <P_7>Grunt akrylowy uniwersalny 10L</P_7>
+            <P_8A>szt.</P_8A><P_8B>8</P_8B>
+            <P_9A>55.00</P_9A><P_11>440.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>41</NrWierszaFa>
+            <P_7>Profil UA 50 — 4m (do ościeżnic)</P_7>
+            <P_8A>szt.</P_8A><P_8B>20</P_8B>
+            <P_9A>22.00</P_9A><P_11>440.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>42</NrWierszaFa>
+            <P_7>Profil CD 60 — 4m</P_7>
+            <P_8A>szt.</P_8A><P_8B>80</P_8B>
+            <P_9A>12.50</P_9A><P_11>1000.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>43</NrWierszaFa>
+            <P_7>Płyta g-k zwykła 12,5mm 120×260</P_7>
+            <P_8A>szt.</P_8A><P_8B>60</P_8B>
+            <P_9A>32.00</P_9A><P_11>1920.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>44</NrWierszaFa>
+            <P_7>Płyta g-k wodoodporna (H2) 12,5mm 120×260</P_7>
+            <P_8A>szt.</P_8A><P_8B>25</P_8B>
+            <P_9A>48.00</P_9A><P_11>1200.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>45</NrWierszaFa>
+            <P_7>Wkręty do g-k 3,5×35mm — op. 1000szt.</P_7>
+            <P_8A>op.</P_8A><P_8B>10</P_8B>
+            <P_9A>25.00</P_9A><P_11>250.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>46</NrWierszaFa>
+            <P_7>Taśma papierowa do spoin g-k — 75m</P_7>
+            <P_8A>szt.</P_8A><P_8B>10</P_8B>
+            <P_9A>8.50</P_9A><P_11>85.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>47</NrWierszaFa>
+            <P_7>Rękawice robocze lateksowe rozmiar 10 — op. 12par</P_7>
+            <P_8A>op.</P_8A><P_8B>5</P_8B>
+            <P_9A>35.00</P_9A><P_11>175.00</P_11><P_12>23</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>48</NrWierszaFa>
+            <P_7>Kask ochronny budowlany z regulacją</P_7>
+            <P_8A>szt.</P_8A><P_8B>10</P_8B>
+            <P_9A>45.00</P_9A><P_11>450.00</P_11><P_12>8</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>49</NrWierszaFa>
+            <P_7>Okulary ochronne bezbarwne klasa 1F</P_7>
+            <P_8A>szt.</P_8A><P_8B>10</P_8B>
+            <P_9A>18.00</P_9A><P_11>180.00</P_11><P_12>8</P_12>
+          </FaWiersz>
+          <FaWiersz>
+            <NrWierszaFa>50</NrWierszaFa>
+            <P_7>Usługa transportu materiałów na budowę (ryczałt)</P_7>
+            <P_8A>usł.</P_8A><P_8B>1</P_8B>
+            <P_9A>3620.00</P_9A><P_11>3620.00</P_11><P_12>8</P_12>
+            <GTU>GTU_13</GTU>
+          </FaWiersz>
+          <DodatkowyOpis>
+            <NrWiersza>1</NrWiersza>
+            <Klucz>Numer zamówienia</Klucz>
+            <Wartosc>ZAM/KONSTRUKT/2026/04/012</Wartosc>
+          </DodatkowyOpis>
+          <DodatkowyOpis>
+            <NrWiersza>2</NrWiersza>
+            <Klucz>Budowa</Klucz>
+            <Wartosc>Osiedle Parkowe, etap II — Kraków ul. Zielona 8-12</Wartosc>
+          </DodatkowyOpis>
+          <Adnotacje>
+            <P_16>2</P_16>
+            <P_17>2</P_17>
+            <Zwolnienie><P_19N>1</P_19N></Zwolnienie>
+          </Adnotacje>
+          <Platnosc>
+            <Zaplacono>2</Zaplacono>
+            <FormaPlatnosci>6</FormaPlatnosci>
+            <TerminPlatnosci>
+              <Termin>2026-05-19</Termin>
+            </TerminPlatnosci>
+            <RachunekBankowy>
+              <NrRB>PL61109010140000071219812874</NrRB>
+              <SWIFT>WBKPPLPP</SWIFT>
+              <NazwaBanku>Santander Bank Polska S.A.</NazwaBanku>
+            </RachunekBankowy>
+          </Platnosc>
+        </Fa>
+        <Stopka>
+          <Informacje>
+            <StopkaFaktury>Dziękujemy za współpracę. Reklamacje w ciągu 7 dni od dostawy.</StopkaFaktury>
+          </Informacje>
+          <Rejestry>
+            <KRS>0000654321</KRS>
+            <REGON>987654321</REGON>
+          </Rejestry>
+        </Stopka>
+      </Faktura>
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("returns 200", function() {
+          expect(res.status).to.equal(200);
+        });
+        test("returns PDF content type", function() {
+          expect(res.headers["content-type"]).to.include("application/pdf");
+        });
+
+settings:
+  encodeUrl: true
