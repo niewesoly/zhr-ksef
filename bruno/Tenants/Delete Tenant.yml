@@ -1,0 +1,30 @@
+info:
+  name: Delete Tenant
+  type: http
+  seq: 6
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/api/v1/tenants/{{tenantId}}"
+  headers:
+    - name: X-Admin-Key
+      value: "{{adminKey}}"
+  body:
+    type: none
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("returns 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+        test("confirms deletion", function() {
+          expect(res.body.deleted).to.equal(true);
+        });
+
+settings:
+  encodeUrl: true

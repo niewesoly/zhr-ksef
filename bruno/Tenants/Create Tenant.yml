@@ -1,0 +1,48 @@
+info:
+  name: Create Tenant
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/tenants"
+  headers:
+    - name: content-type
+      value: application/json
+    - name: X-Admin-Key
+      value: "{{adminKey}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Test Tenant",
+        "nip": "1234567890",
+        "apiUrl": "test"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 201) {
+          bru.setVar("tenantId", res.body.tenant.id);
+          bru.setVar("apiKey", res.body.apiKey);
+          bru.setEnvVar("apiKey", res.body.apiKey);
+        }
+    - type: tests
+      code: |-
+        test("returns 201", function() {
+          expect(res.status).to.equal(201);
+        });
+
+        test("response has tenant and apiKey", function() {
+          expect(res.body.tenant).to.be.an("object");
+          expect(res.body.tenant.id).to.be.a("string");
+          expect(res.body.tenant.nip).to.equal("1234567890");
+          expect(res.body.apiKey).to.be.a("string");
+        });
+
+settings:
+  encodeUrl: true
