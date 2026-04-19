@@ -69,23 +69,6 @@ const styles = StyleSheet.create({
   dlRowTwo: { flexDirection: "row", marginBottom: 1 },
   dlLabelTwo: { width: "48%", fontFamily: "LiberationSans", fontWeight: "bold", color: "#444", paddingRight: 3 },
   dlValueTwo: { width: "52%" },
-  // Table shared
-  table: { width: "100%", marginTop: 3 },
-  tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "#e8e8e8",
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#888",
-    borderStyle: "solid",
-  },
-  tableRow: {
-    flexDirection: "row",
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#888",
-    borderStyle: "solid",
-  },
-  cell: { padding: 2, fontSize: 8 },
-  cellNum: { padding: 2, fontSize: 8, textAlign: "right" },
   // Section wrapper
   section: { marginBottom: 6 },
   // Naglowek

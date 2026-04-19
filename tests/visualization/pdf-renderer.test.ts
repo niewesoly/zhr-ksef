@@ -101,6 +101,22 @@ test("renderInvoicePdf handles a minimal invoice with zero line items", async ()
   assertValidPdf(buf, "minimal invoice");
 });
 
+test("renderInvoicePdf brutto mode produces valid PDF without regression", async () => {
+  const xml = loadFixture("sample_fa3_brutto.xml");
+  const invoice = parseInvoiceFa3(xml, "TEST-BRUTTO-TABLE");
+  const buf = await renderInvoicePdf(invoice);
+  assertValidPdf(buf, "brutto table regression");
+  assert.ok(buf.length > 2048, "brutto PDF with tables should be substantial");
+});
+
+test("renderInvoicePdf extended fixture with all sections produces valid PDF", async () => {
+  const xml = loadFixture("sample_fa3_extended.xml");
+  const invoice = parseInvoiceFa3(xml, "TEST-EXT-TABLE");
+  const buf = await renderInvoicePdf(invoice);
+  assertValidPdf(buf, "extended table regression");
+  assert.ok(buf.length > 2048, "extended PDF with tables should be substantial");
+});
+
 test("renderInvoicePdf called twice with the same fixture returns valid PDFs both times", async () => {
   const xml = loadFixture("sample_fa3.xml");
   const invoice = parseInvoiceFa3(xml, "TEST-KSEF-REPEAT");
