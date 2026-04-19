@@ -134,8 +134,10 @@
          produces two rows in PodsumowanieStawek. -->
     <P_13_1>800.00</P_13_1>
     <P_14_1>184.00</P_14_1>
+    <P_14_1W>793.96</P_14_1W>
     <P_13_2>200.00</P_13_2>
     <P_14_2>16.00</P_14_2>
+    <P_14_2W>69.00</P_14_2W>
     <P_15>1200.00</P_15>
 
     <!-- Three FaWiersz: first two have netto (P_9A + P_11),

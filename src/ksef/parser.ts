@@ -83,6 +83,7 @@ export interface TaxSummaryRow {
   kwotaNetto: number;
   kwotaPodatku: number;
   kwotaBrutto: number;
+  kwotaPodatkuPLN: number | null;
 }
 
 export interface AdditionalInfo {
@@ -289,21 +290,22 @@ const COUNTRY_NAME: Record<string, string> = {
 const VAT_BUCKETS: ReadonlyArray<{
   net: string;
   tax: string | null;
+  taxPLN: string | null;
   label: string;
 }> = [
-  { net: "P_13_1", tax: "P_14_1", label: "23% lub 22%" },
-  { net: "P_13_2", tax: "P_14_2", label: "8% lub 7%" },
-  { net: "P_13_3", tax: "P_14_3", label: "5%" },
-  { net: "P_13_4", tax: "P_14_4", label: "4% lub 3%" },
-  { net: "P_13_5", tax: "P_14_5", label: "OSS" },
-  { net: "P_13_6_1", tax: null, label: "0% (krajowe)" },
-  { net: "P_13_6_2", tax: null, label: "0% WDT" },
-  { net: "P_13_6_3", tax: null, label: "0% eksport" },
-  { net: "P_13_7", tax: null, label: "zwolnione od podatku" },
-  { net: "P_13_8", tax: null, label: "np. z wył. art. 100 ust. 1 pkt 4" },
-  { net: "P_13_9", tax: null, label: "np. art. 100 ust. 1 pkt 4" },
-  { net: "P_13_10", tax: null, label: "odwrotne obciążenie" },
-  { net: "P_13_11", tax: null, label: "marża" },
+  { net: "P_13_1", tax: "P_14_1", taxPLN: "P_14_1W", label: "23% lub 22%" },
+  { net: "P_13_2", tax: "P_14_2", taxPLN: "P_14_2W", label: "8% lub 7%" },
+  { net: "P_13_3", tax: "P_14_3", taxPLN: "P_14_3W", label: "5%" },
+  { net: "P_13_4", tax: "P_14_4", taxPLN: "P_14_4W", label: "4% lub 3%" },
+  { net: "P_13_5", tax: "P_14_5", taxPLN: "P_14_5W", label: "OSS" },
+  { net: "P_13_6_1", tax: null, taxPLN: null, label: "0% (krajowe)" },
+  { net: "P_13_6_2", tax: null, taxPLN: null, label: "0% WDT" },
+  { net: "P_13_6_3", tax: null, taxPLN: null, label: "0% eksport" },
+  { net: "P_13_7", tax: null, taxPLN: null, label: "zwolnione od podatku" },
+  { net: "P_13_8", tax: null, taxPLN: null, label: "np. z wył. art. 100 ust. 1 pkt 4" },
+  { net: "P_13_9", tax: null, taxPLN: null, label: "np. art. 100 ust. 1 pkt 4" },
+  { net: "P_13_10", tax: null, taxPLN: null, label: "odwrotne obciążenie" },
+  { net: "P_13_11", tax: null, taxPLN: null, label: "marża" },
 ];
 
 // ─── Parser ───────────────────────────────────────────────────────────────────
@@ -457,6 +459,7 @@ function parseTaxSummary(fa: Record<string, unknown>): TaxSummaryRow[] {
   for (const bucket of VAT_BUCKETS) {
     const net = findFieldNumber(fa, bucket.net);
     const tax = bucket.tax ? findFieldNumber(fa, bucket.tax) : null;
+    const taxPLN = bucket.taxPLN ? findFieldNumber(fa, bucket.taxPLN) : null;
     if (net == null && tax == null) continue;
     const netVal = net ?? 0;
     const taxVal = tax ?? 0;
@@ -468,6 +471,7 @@ function parseTaxSummary(fa: Record<string, unknown>): TaxSummaryRow[] {
       kwotaNetto: netVal,
       kwotaPodatku: taxVal,
       kwotaBrutto: netVal + taxVal,
+      kwotaPodatkuPLN: taxPLN,
     });
   }
 
