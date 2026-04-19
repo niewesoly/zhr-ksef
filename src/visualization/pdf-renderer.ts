@@ -286,20 +286,18 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
   const brutto = invoice.bruttoMode;
   const hasGtu = invoice.lineItems.some((r) => r.gtu != null);
 
-  const w = hasGtu
-    ? { lp: "5%", nazwa: "25%", ilosc: "7%", miara: "7%", cena: "12%", stawka: "7%", wart: "11%", gtu: "7%" }
-    : { lp: "5%", nazwa: "33%", ilosc: "8%", miara: "7%", cena: "13%", stawka: "8%", wart: "12%", gtu: "0%" };
+  const nazwaSz = hasGtu ? "28%" : "36%";
 
   const headerCells = [
-    tableCell("Lp.", { width: w.lp, isHeader: true }),
-    tableCell("Nazwa", { width: w.nazwa, isHeader: true }),
-    tableCell("Ilość", { width: w.ilosc, align: "right", isHeader: true }),
-    tableCell("Miara", { width: w.miara, isHeader: true }),
-    tableCell(brutto ? "Cena brutto" : "Cena netto", { width: w.cena, align: "right", isHeader: true }),
-    tableCell("Stawka", { width: w.stawka, isHeader: true }),
-    tableCell(brutto ? "Wartość brutto" : "Wartość netto", { width: w.wart, align: "right", isHeader: true }),
-    ...(!brutto ? [tableCell("Wartość brutto", { width: w.wart, align: "right", isHeader: true })] : []),
-    ...(hasGtu ? [tableCell("GTU", { width: w.gtu, isHeader: true })] : []),
+    tableCell("Lp.", { width: "4%", isHeader: true }),
+    tableCell("Nazwa", { width: nazwaSz, isHeader: true }),
+    tableCell("Ilość", { width: "8%", align: "right", isHeader: true }),
+    tableCell("Miara", { width: "7%", isHeader: true }),
+    tableCell(brutto ? "Cena brutto" : "Cena netto", { width: "13%", align: "right", isHeader: true }),
+    tableCell("Stawka", { width: "8%", isHeader: true }),
+    tableCell(brutto ? "Wartość brutto" : "Wartość netto", { width: "12%", align: "right", isHeader: true }),
+    ...(!brutto ? [tableCell("Wartość brutto", { width: "12%", align: "right", isHeader: true })] : []),
+    ...(hasGtu ? [tableCell("GTU", { width: "8%", isHeader: true })] : []),
   ];
 
   const dataRows = invoice.lineItems.map((item, i) => {
@@ -310,21 +308,21 @@ function wiersze(invoice: InvoiceFa3): ReactElement {
     ].filter(Boolean).join(" ");
 
     const cells = [
-      tableCell(String(item.lp), { width: w.lp }),
-      tableCell(nazwaText, { width: w.nazwa }),
-      tableCell(fmtQty(item.ilosc), { width: w.ilosc, align: "right" }),
-      tableCell(item.miara ?? "—", { width: w.miara }),
+      tableCell(String(item.lp), { width: "4%" }),
+      tableCell(nazwaText, { width: nazwaSz }),
+      tableCell(fmtQty(item.ilosc), { width: "8%", align: "right" }),
+      tableCell(item.miara ?? "—", { width: "7%" }),
       tableCell(
         brutto ? fmtMoney(item.cenaJednBrutto ?? null, currency) : fmtMoney(item.cenaJednNetto, currency),
-        { width: w.cena, align: "right" },
+        { width: "13%", align: "right" },
       ),
-      tableCell(stawkaPodatku(item.stawkaPodatku ?? null), { width: w.stawka }),
+      tableCell(stawkaPodatku(item.stawkaPodatku ?? null), { width: "8%" }),
       tableCell(
         brutto ? fmtMoney(item.wartoscBrutto ?? null, currency) : fmtMoney(item.wartoscNetto, currency),
-        { width: w.wart, align: "right" },
+        { width: "12%", align: "right" },
       ),
-      ...(!brutto ? [tableCell(fmtMoney(item.wartoscBrutto ?? null, currency), { width: w.wart, align: "right" })] : []),
-      ...(hasGtu ? [tableCell(item.gtu ? (gtu(item.gtu) ?? item.gtu) : "—", { width: w.gtu })] : []),
+      ...(!brutto ? [tableCell(fmtMoney(item.wartoscBrutto ?? null, currency), { width: "12%", align: "right" })] : []),
+      ...(hasGtu ? [tableCell(item.gtu ? (gtu(item.gtu) ?? item.gtu) : "—", { width: "8%" })] : []),
     ];
 
     return tableRow(cells, { index: i });

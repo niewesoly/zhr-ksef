@@ -16,9 +16,6 @@ const baseStyles = StyleSheet.create({
   cell: {
     padding: 2,
     fontSize: 8,
-    borderRightWidth: 0.5,
-    borderRightColor: "#bbb",
-    borderStyle: "solid",
   },
   cellRight: {
     textAlign: "right",
