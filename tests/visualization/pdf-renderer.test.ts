@@ -92,6 +92,7 @@ test("renderInvoicePdf handles a minimal invoice with zero line items", async ()
     przyczynaKorekty: null,
     okresFaKorygowanej: null,
     adnotacje: null,
+    tp: false,
     rozliczenie: null,
     warunkiTransakcji: null,
     stopka: null,

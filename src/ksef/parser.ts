@@ -74,6 +74,7 @@ export interface InvoiceLineItem {
   gtu: string | null;
   p12Zal15: boolean;
   stanPrzed: boolean;
+  p6a: string | null;
 }
 
 export interface TaxSummaryRow {
@@ -242,6 +243,7 @@ export interface InvoiceFa3 {
   przyczynaKorekty: string | null;
   okresFaKorygowanej: string | null;
   adnotacje: Adnotacje | null;
+  tp: boolean;
   rozliczenie: Rozliczenie | null;
   warunkiTransakcji: WarunkiTransakcji | null;
   stopka: Stopka | null;
@@ -443,6 +445,7 @@ function parseLineItems(fa: Record<string, unknown>): InvoiceLineItem[] {
       gtu: findFieldString(row, "GTU"),
       p12Zal15: findFieldString(row, "P_12_Zal_15") === "1",
       stanPrzed: findFieldString(row, "StanPrzed") === "1",
+      p6a: findFieldString(row, "P_6A"),
     } satisfies InvoiceLineItem;
   }).filter((x): x is InvoiceLineItem => x !== null);
 }
@@ -816,6 +819,7 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     przyczynaKorekty: correctionReason,
     okresFaKorygowanej,
     adnotacje: parseAdnotacje(fa),
+    tp: findFieldString(fa, "TP") === "1",
     rozliczenie: parseRozliczenie(fa),
     warunkiTransakcji: parseWarunkiTransakcji(fa),
     stopka: parseStopka(faktura),

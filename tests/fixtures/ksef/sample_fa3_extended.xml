@@ -114,6 +114,7 @@
     <!-- RodzajFaktury=KOR + OkresFaKorygowanej => "korygująca zbiorcza
          (rabat)" label path in the renderer. -->
     <RodzajFaktury>KOR</RodzajFaktury>
+    <TP>1</TP>
     <OkresFaKorygowanej>2026-01</OkresFaKorygowanej>
     <PrzyczynaKorekty>Błędna cena jednostkowa w pozycji 1</PrzyczynaKorekty>
 
@@ -154,6 +155,7 @@
       <PKWiU>70.22.1</PKWiU>
       <GTU>GTU_12</GTU>
       <P_12_Zal_15>1</P_12_Zal_15>
+      <P_6A>2026-04-05</P_6A>
     </FaWiersz>
     <FaWiersz>
       <NrWierszaFa>2</NrWierszaFa>
