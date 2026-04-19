@@ -60,6 +60,7 @@ export async function startSyncScheduler(): Promise<void> {
   timer = setInterval(() => {
     reconcile().catch((err) => log.error({ err }, "scheduler reconcile failed"));
   }, POLL_INTERVAL_MS);
+  timer.unref();
 }
 
 export async function stopSyncScheduler(): Promise<void> {

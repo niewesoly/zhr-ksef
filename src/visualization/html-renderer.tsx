@@ -563,7 +563,8 @@ const PodsumowanieStawek: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
 const RozliczenieSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   const rozl: Rozliczenie | null = invoice.rozliczenie;
   if (!rozl) return null;
-  if (rozl.sumaObciazen == null && rozl.sumaOdliczen == null && rozl.doZaplaty == null && rozl.doRozliczenia == null) return null;
+  const hasEntries = rozl.obciazenia.length > 0 || rozl.odliczenia.length > 0;
+  if (!hasEntries && rozl.sumaObciazen == null && rozl.sumaOdliczen == null && rozl.doZaplaty == null && rozl.doRozliczenia == null) return null;
   const currency = invoice.currency;
   return (
     <div class="ksef-section">
@@ -903,7 +904,7 @@ const StopkaSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
 };
 
 const CorrectionReasonSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
-  const reason = invoice.correctionReason ?? invoice.przyczynaKorekty;
+  const reason = invoice.correctionReason;
   if (!reason) return null;
   return (
     <div class="ksef-section">

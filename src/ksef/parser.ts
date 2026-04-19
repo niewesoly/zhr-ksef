@@ -248,7 +248,6 @@ export interface InvoiceFa3 {
   registries: RegistryEntry[];
   daneFaKorygowanej: DaneFaKorygowanej[];
   correctionReason: string | null;
-  przyczynaKorekty: string | null;
   okresFaKorygowanej: string | null;
   adnotacje: Adnotacje | null;
   tp: boolean;
@@ -273,15 +272,6 @@ const INVOICE_TYPE_LABEL: Record<string, string> = {
   KOR_ROZ: "Korekta faktury rozliczeniowej",
 };
 
-export const PAYMENT_METHOD: Record<string, string> = {
-  "1": "Gotówka",
-  "2": "Karta",
-  "3": "Bon",
-  "4": "Czek",
-  "5": "Kredyt",
-  "6": "Przelew",
-  "7": "Płatność mobilna",
-};
 
 const COUNTRY_NAME: Record<string, string> = {
   PL: "Polska", DE: "Niemcy", FR: "Francja", CZ: "Czechy", SK: "Słowacja",
@@ -659,10 +649,12 @@ function parseRozliczenieEntries(
   rozliczenie: Record<string, unknown>,
   fieldName: string,
 ): RozliczenieLineItem[] {
-  return toArray(findField(rozliczenie, fieldName)).map((row) => ({
-    kwota: findFieldNumber(row, "Kwota"),
-    powod: findFieldString(row, "Powod"),
-  }));
+  return toArray(findField(rozliczenie, fieldName))
+    .filter(isRecord)
+    .map((row) => ({
+      kwota: findFieldNumber(row, "Kwota"),
+      powod: findFieldString(row, "Powod"),
+    }));
 }
 
 function parseRozliczenie(fa: Record<string, unknown>): Rozliczenie | null {
@@ -841,7 +833,6 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     registries: parseRegistries(podmiot1),
     daneFaKorygowanej,
     correctionReason,
-    przyczynaKorekty: correctionReason,
     okresFaKorygowanej,
     adnotacje: parseAdnotacje(fa),
     tp: findFieldString(fa, "TP") === "1",

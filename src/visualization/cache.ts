@@ -22,7 +22,7 @@ let totalBytes = 0;
 export function renderKey(
   tenantId: string,
   invoiceId: string,
-  format: "html" | "pdf" | "pdf-wk",
+  format: "html" | "pdf",
 ): string {
   return `${tenantId}:${invoiceId}:${format}`;
 }
@@ -58,7 +58,7 @@ export function setRender(key: string, buf: Buffer, contentType: string): void {
 }
 
 export function invalidateRender(tenantId: string, invoiceId: string): void {
-  for (const format of ["html", "pdf", "pdf-wk"] as const) {
+  for (const format of ["html", "pdf"] as const) {
     const key = renderKey(tenantId, invoiceId, format);
     const entry = store.get(key);
     if (entry) {

@@ -205,7 +205,7 @@ function daneFaKorygowanej(invoice: InvoiceFa3): ReactElement | null {
 }
 
 function correctionReasonSection(invoice: InvoiceFa3): ReactElement | null {
-  const reason = invoice.correctionReason ?? invoice.przyczynaKorekty;
+  const reason = invoice.correctionReason;
   if (!reason) return null;
   return h(
     View,
