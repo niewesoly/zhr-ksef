@@ -47,7 +47,7 @@ const openApiDocument = buildOpenApiDocument();
 app.get("/api/v1/openapi.json", (c) => c.json(openApiDocument));
 app.get("/api/v1/docs", swaggerUI({ url: "/api/v1/openapi.json" }));
 
-// Unauthenticated liveness probe — does not touch the DB.
+app.get("/", (c) => c.json({ status: "ok" }));
 app.get("/health", (c) => c.json({ status: "ok" }));
 
 // Visualization preview — accepts raw FA(3) XML, renders without DB/auth.
