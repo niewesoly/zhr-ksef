@@ -201,6 +201,17 @@ function daneFaKorygowanej(invoice: InvoiceFa3): ReactElement | null {
   );
 }
 
+function correctionReasonSection(invoice: InvoiceFa3): ReactElement | null {
+  const reason = invoice.correctionReason ?? invoice.przyczynaKorekty;
+  if (!reason) return null;
+  return h(
+    View,
+    { style: styles.section, wrap: false },
+    sectionTitle("Przyczyna korekty"),
+    h(Text, { style: { fontStyle: "italic", fontSize: 8 } }, reason),
+  );
+}
+
 // E5: Podmioty side-by-side
 
 function buildAdresLines(addr: { adresL1: string | null; adresL2: string | null; kodKraju: string | null } | null): string[] {
@@ -225,6 +236,8 @@ function podmiotCard(title: string, p: InvoiceParty, role: PodmiotRole): ReactEl
   const body: (ReactElement | null)[] = [];
   if (nipParts.length > 0) body.push(row("NIP:", nipParts.join(" ")));
   if (p.nrEORI && p.nrEORI.trim() !== "") body.push(row("EORI:", p.nrEORI));
+  const vatUeParts = [p.kodUE, p.nrVatUE].filter((x): x is string => x !== null && x.trim() !== "");
+  if (vatUeParts.length > 0) body.push(row("VAT UE:", vatUeParts.join(" ")));
   if (p.nazwa && p.nazwa.trim() !== "") body.push(h(Text, { style: [styles.partyRow, styles.partyName] }, p.nazwa));
   adresLines.forEach((l) => body.push(textRow(l)));
   if (adresKorespLines.length > 0) {
@@ -244,6 +257,11 @@ function podmiotCard(title: string, p: InvoiceParty, role: PodmiotRole): ReactEl
   if (role === "nabywca" && p.gv) body.push(row("Grupa VAT:", "TAK"));
   if (role === "sprzedawca" && p.statusInfoPodatnika && p.statusInfoPodatnika.trim() !== "") {
     body.push(row("Status podatnika:", taxpayerStatus(p.statusInfoPodatnika) ?? p.statusInfoPodatnika));
+  }
+  if (p.daneRejestrowe) {
+    if (p.daneRejestrowe.nazwaPelna) body.push(row("Pełna nazwa:", p.daneRejestrowe.nazwaPelna));
+    if (p.daneRejestrowe.krs) body.push(row("KRS:", p.daneRejestrowe.krs));
+    if (p.daneRejestrowe.regon) body.push(row("REGON:", p.daneRejestrowe.regon));
   }
 
   return h(
@@ -351,17 +369,19 @@ function podsumowanieStawek(invoice: InvoiceFa3): ReactElement | null {
   const currency = invoice.currency;
 
   const headerCells = [
-    tableCell("Stawka", { width: "28%", isHeader: true }),
-    tableCell("Netto", { width: "24%", align: "right", isHeader: true }),
-    tableCell("VAT", { width: "24%", align: "right", isHeader: true }),
+    tableCell("Lp.", { width: "8%", isHeader: true }),
+    tableCell("Stawka", { width: "24%", isHeader: true }),
+    tableCell("Netto", { width: "22%", align: "right", isHeader: true }),
+    tableCell("VAT", { width: "22%", align: "right", isHeader: true }),
     tableCell("Brutto", { width: "24%", align: "right", isHeader: true }),
   ];
 
   const dataRows = rows.map((r, i) =>
     tableRow([
-      tableCell(r.label, { width: "28%" }),
-      tableCell(fmtMoney(r.kwotaNetto, currency), { width: "24%", align: "right" }),
-      tableCell(fmtMoney(r.kwotaPodatku, currency), { width: "24%", align: "right" }),
+      tableCell(String(r.lp), { width: "8%" }),
+      tableCell(r.label, { width: "24%" }),
+      tableCell(fmtMoney(r.kwotaNetto, currency), { width: "22%", align: "right" }),
+      tableCell(fmtMoney(r.kwotaPodatku, currency), { width: "22%", align: "right" }),
       tableCell(fmtMoney(r.kwotaBrutto, currency), { width: "24%", align: "right" }),
     ], { index: i }),
   );
@@ -392,14 +412,61 @@ function rozliczenie(invoice: InvoiceFa3): ReactElement | null {
   const rozl = invoice.rozliczenie;
   if (!rozl) return null;
   const { sumaObciazen, sumaOdliczen, doZaplaty, doRozliczenia } = rozl;
-  if (sumaObciazen == null && sumaOdliczen == null && doZaplaty == null && doRozliczenia == null) return null;
+  const hasEntries = rozl.obciazenia.length > 0 || rozl.odliczenia.length > 0;
+  if (!hasEntries && sumaObciazen == null && sumaOdliczen == null && doZaplaty == null && doRozliczenia == null) return null;
   const currency = invoice.currency;
-  const rows: ReactElement[] = [];
-  if (sumaObciazen != null) rows.push(dlRow("Suma obciążeń:", fmtMoney(sumaObciazen, currency), true));
-  if (sumaOdliczen != null) rows.push(dlRow("Suma odliczeń:", fmtMoney(sumaOdliczen, currency), true));
-  if (doZaplaty != null) rows.push(dlRow("Do zapłaty:", fmtMoney(doZaplaty, currency), true));
-  if (doRozliczenia != null) rows.push(dlRow("Do rozliczenia:", fmtMoney(doRozliczenia, currency), true));
-  return h(View, { style: styles.section, wrap: false }, sectionTitle("Rozliczenie"), ...rows);
+
+  const parts: (ReactElement | null)[] = [];
+
+  if (rozl.obciazenia.length > 0) {
+    parts.push(h(Text, { style: styles.bankTitle }, "Obciążenia"));
+    parts.push(
+      tableContainer(
+        tableHeader([
+          tableCell("Kwota", { width: "35%", align: "right", isHeader: true }),
+          tableCell("Powód", { width: "65%", isHeader: true }),
+        ]),
+        rozl.obciazenia.map((o, i) =>
+          tableRow([
+            tableCell(fmtMoney(o.kwota, currency), { width: "35%", align: "right" }),
+            tableCell(o.powod ?? "—", { width: "65%" }),
+          ], { index: i }),
+        ),
+      ),
+    );
+  }
+
+  if (rozl.odliczenia.length > 0) {
+    parts.push(h(Text, { style: [styles.bankTitle, { marginTop: 3 }] }, "Odliczenia"));
+    parts.push(
+      tableContainer(
+        tableHeader([
+          tableCell("Kwota", { width: "35%", align: "right", isHeader: true }),
+          tableCell("Powód", { width: "65%", isHeader: true }),
+        ]),
+        rozl.odliczenia.map((o, i) =>
+          tableRow([
+            tableCell(fmtMoney(o.kwota, currency), { width: "35%", align: "right" }),
+            tableCell(o.powod ?? "—", { width: "65%" }),
+          ], { index: i }),
+        ),
+      ),
+    );
+  }
+
+  const dlRows: ReactElement[] = [];
+  if (sumaObciazen != null) dlRows.push(dlRow("Suma obciążeń:", fmtMoney(sumaObciazen, currency), true));
+  if (sumaOdliczen != null) dlRows.push(dlRow("Suma odliczeń:", fmtMoney(sumaOdliczen, currency), true));
+  if (doZaplaty != null) dlRows.push(dlRow("Do zapłaty:", fmtMoney(doZaplaty, currency), true));
+  if (doRozliczenia != null) dlRows.push(dlRow("Do rozliczenia:", fmtMoney(doRozliczenia, currency), true));
+
+  return h(
+    View,
+    { style: styles.section },
+    sectionTitle("Rozliczenie"),
+    ...parts.filter(Boolean),
+    ...dlRows,
+  );
 }
 
 // E11: Platnosc
@@ -550,6 +617,31 @@ function stopka(invoice: InvoiceFa3): ReactElement | null {
   );
 }
 
+function additionalInfoSection(invoice: InvoiceFa3): ReactElement | null {
+  if (invoice.additionalInfo.length === 0) return null;
+
+  const headerCells = [
+    tableCell("Lp.", { width: "8%", isHeader: true }),
+    tableCell("Klucz", { width: "42%", isHeader: true }),
+    tableCell("Wartość", { width: "50%", isHeader: true }),
+  ];
+
+  const dataRows = invoice.additionalInfo.map((row, i) =>
+    tableRow([
+      tableCell(String(row.lp), { width: "8%" }),
+      tableCell(row.rodzaj, { width: "42%" }),
+      tableCell(row.tresc, { width: "50%" }),
+    ], { index: i }),
+  );
+
+  return h(
+    View,
+    { style: styles.section },
+    sectionTitle("Informacje dodatkowe"),
+    tableContainer(tableHeader(headerCells), dataRows),
+  );
+}
+
 function buildDocument(invoice: InvoiceFa3): ReactElement<DocumentProps> {
   return h(
     Document,
@@ -559,6 +651,7 @@ function buildDocument(invoice: InvoiceFa3): ReactElement<DocumentProps> {
       { size: "A4", style: styles.page },
       naglowek(invoice),
       daneFaKorygowanej(invoice),
+      correctionReasonSection(invoice),
       podmioty(invoice),
       szczegoly(invoice),
       wiersze(invoice),
@@ -568,6 +661,7 @@ function buildDocument(invoice: InvoiceFa3): ReactElement<DocumentProps> {
       platnosc(invoice),
       warunkiTransakcji(invoice),
       stopka(invoice),
+      additionalInfoSection(invoice),
     ),
   ) as ReactElement<DocumentProps>;
 }
