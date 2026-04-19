@@ -75,6 +75,7 @@ export interface InvoiceLineItem {
   p12Zal15: boolean;
   stanPrzed: boolean;
   p6a: string | null;
+  wz: string | null;
 }
 
 export interface TaxSummaryRow {
@@ -131,6 +132,12 @@ export interface Payment {
 }
 
 export interface DaneFaKorygowanej {
+  numer: string | null;
+  dataWystawienia: string | null;
+  nrKsef: string | null;
+}
+
+export interface FakturaZaliczkowaRef {
   numer: string | null;
   dataWystawienia: string | null;
   nrKsef: string | null;
@@ -248,6 +255,8 @@ export interface InvoiceFa3 {
   rozliczenie: Rozliczenie | null;
   warunkiTransakcji: WarunkiTransakcji | null;
   stopka: Stopka | null;
+  fakturaZaliczkowa: FakturaZaliczkowaRef[];
+  okresFa: string | null;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -331,6 +340,7 @@ const parser = new XMLParser({
       "StopkaFaktury",
       "Rejestry",
       "Transport",
+      "ZamowienieWi662",
     ].some((n) => name.endsWith(n)),
   parseAttributeValue: true,
   parseTagValue: true,
@@ -448,6 +458,7 @@ function parseLineItems(fa: Record<string, unknown>): InvoiceLineItem[] {
       p12Zal15: findFieldString(row, "P_12_Zal_15") === "1",
       stanPrzed: findFieldString(row, "StanPrzed") === "1",
       p6a: findFieldString(row, "P_6A"),
+      wz: findFieldString(row, "WZ"),
     } satisfies InvoiceLineItem;
   }).filter((x): x is InvoiceLineItem => x !== null);
 }
@@ -559,6 +570,16 @@ function parseDaneFaKorygowanej(fa: Record<string, unknown>): DaneFaKorygowanej[
       numer: findFieldString(n, "NrFaKorygowanej"),
       dataWystawienia: findFieldString(n, "DataWystFaKorygowanej"),
       nrKsef: findFieldString(n, "NrKSeFFaKorygowanej"),
+    }));
+}
+
+function parseFakturaZaliczkowa(fa: Record<string, unknown>): FakturaZaliczkowaRef[] {
+  return toArray(findField(fa, "ZamowienieWi662"))
+    .filter(isRecord)
+    .map((n) => ({
+      numer: findFieldString(n, "NrZamowienia") ?? findFieldString(n, "NrWZ"),
+      dataWystawienia: findFieldString(n, "DataZamowienia"),
+      nrKsef: findFieldString(n, "NrKSeF"),
     }));
 }
 
@@ -827,5 +848,7 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     rozliczenie: parseRozliczenie(fa),
     warunkiTransakcji: parseWarunkiTransakcji(fa),
     stopka: parseStopka(faktura),
+    fakturaZaliczkowa: parseFakturaZaliczkowa(fa),
+    okresFa: findFieldString(fa, "OkresFa"),
   };
 }

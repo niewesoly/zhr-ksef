@@ -96,6 +96,8 @@ test("renderInvoicePdf handles a minimal invoice with zero line items", async ()
     rozliczenie: null,
     warunkiTransakcji: null,
     stopka: null,
+    fakturaZaliczkowa: [],
+    okresFa: null,
   };
 
   const buf = await renderInvoicePdf(minimal);

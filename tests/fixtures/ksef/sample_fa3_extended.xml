@@ -110,6 +110,7 @@
     <P_1M>Warszawa</P_1M>
     <P_2>FA/EXT/2026/04/0001</P_2>
     <P_6>2026-04-01</P_6>
+    <OkresFa>2026-04-01/2026-04-30</OkresFa>
 
     <!-- RodzajFaktury=KOR + OkresFaKorygowanej => "korygująca zbiorcza
          (rabat)" label path in the renderer. -->
@@ -158,6 +159,7 @@
       <GTU>GTU_12</GTU>
       <P_12_Zal_15>1</P_12_Zal_15>
       <P_6A>2026-04-05</P_6A>
+      <WZ>WZ/2026/04/001</WZ>
     </FaWiersz>
     <FaWiersz>
       <NrWierszaFa>2</NrWierszaFa>
