@@ -54,6 +54,8 @@
   <Podmiot2>
     <DaneIdentyfikacyjne>
       <NIP>6808208874</NIP>
+      <KodUE>PL</KodUE>
+      <NrVatUE>6808208874</NrVatUE>
       <Nazwa>Jednostka Samorządu Terytorialnego — Test</Nazwa>
     </DaneIdentyfikacyjne>
     <Adres>
@@ -113,6 +115,7 @@
          (rabat)" label path in the renderer. -->
     <RodzajFaktury>KOR</RodzajFaktury>
     <OkresFaKorygowanej>2026-01</OkresFaKorygowanej>
+    <PrzyczynaKorekty>Błędna cena jednostkowa w pozycji 1</PrzyczynaKorekty>
 
     <!-- Two DaneFaKorygowanej rows => array rendering. -->
     <DaneFaKorygowanej>
