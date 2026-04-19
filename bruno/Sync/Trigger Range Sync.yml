@@ -1,0 +1,42 @@
+info:
+  name: Trigger Range Sync
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/api/v1/tenants/{{tenantId}}/sync/range"
+  headers:
+    - name: content-type
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "dateFrom": "2026-04-01",
+        "dateTo": "2026-04-19"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 202) {
+          bru.setVar("syncRunId", res.body.jobId);
+        }
+    - type: tests
+      code: |-
+        test("returns 202 Accepted", function() {
+          expect(res.status).to.equal(202);
+        });
+
+        test("response has range details", function() {
+          expect(res.body.kind).to.equal("range");
+          expect(res.body.dateFrom).to.be.a("string");
+          expect(res.body.dateTo).to.be.a("string");
+        });
+
+settings:
+  encodeUrl: true

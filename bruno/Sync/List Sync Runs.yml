@@ -1,0 +1,33 @@
+info:
+  name: List Sync Runs
+  type: http
+  seq: 3
+
+http:
+  method: GET
+  url: "{{baseUrl}}/api/v1/tenants/{{tenantId}}/sync/runs"
+  headers: []
+  body:
+    type: none
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 200 && res.body.items && res.body.items.length > 0) {
+          bru.setVar("syncRunId", res.body.items[0].id);
+        }
+    - type: tests
+      code: |-
+        test("returns 200", function() {
+          expect(res.status).to.equal(200);
+        });
+
+        test("response has items array", function() {
+          expect(res.body.items).to.be.an("array");
+        });
+
+settings:
+  encodeUrl: true
