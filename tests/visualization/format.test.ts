@@ -94,6 +94,14 @@ suite("fmtMoneyStr", () => {
   test("non-numeric string returns em dash", () => {
     assert.equal(fmtMoneyStr("not-a-number", "PLN"), "—");
   });
+
+  test("fmtMoneyStr returns '—' for empty string", () => {
+    assert.strictEqual(fmtMoneyStr("", "PLN"), "—");
+  });
+
+  test("fmtMoneyStr returns '—' for whitespace-only string", () => {
+    assert.strictEqual(fmtMoneyStr("   ", "PLN"), "—");
+  });
 });
 
 suite("fmtQty", () => {
