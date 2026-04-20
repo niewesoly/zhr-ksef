@@ -23,6 +23,17 @@ export function fmtMoney(n: number | null | undefined, currency: string | null |
 }
 
 /**
+ * Format a decimal string (e.g. from XML) as a monetary amount with 2 decimal
+ * places and a currency code. Returns "—" for null input or a value that
+ * parseFloat cannot interpret.
+ */
+export function fmtMoneyStr(s: string | null, currency: string | null | undefined): string {
+  if (s == null) return "—";
+  const n = parseFloat(s);
+  return isNaN(n) ? "—" : fmtMoney(n, currency);
+}
+
+/**
  * Format a quantity value. Integers are rendered without a decimal point.
  * Returns "—" for null/undefined.
  */

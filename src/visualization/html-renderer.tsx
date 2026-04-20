@@ -1,7 +1,7 @@
 import type { FC } from "hono/jsx";
 import type { InvoiceFa3, InvoiceParty, Adnotacje, Rozliczenie, AdditionalInfo } from "../ksef/parser.js";
 import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags, zaplacono, znacznikZaplatyCzesciowej, formaPlatnosci, rodzajTransportu, gtu } from "../ksef/dictionaries.js";
-import { fmtDate, fmtMoney, fmtQty, buildAdresLines } from "./format.js";
+import { fmtDate, fmtMoney, fmtMoneyStr, fmtQty, buildAdresLines } from "./format.js";
 
 // Renders a parsed FA(3) invoice to a fully self-contained HTML document.
 // Uses only inline `<style>` so the CSP `default-src 'none'` block does not
@@ -640,13 +640,6 @@ const RozliczenieSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
     </div>
   );
 };
-
-function fmtMoneyStr(kwota: string | null, currency: string | null | undefined): string {
-  if (kwota == null) return "—";
-  const n = parseFloat(kwota);
-  if (isNaN(n)) return kwota;
-  return `${n.toFixed(2)} ${currency ?? ""}`.trim();
-}
 
 const Platnosc: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   const payment = invoice.payment;

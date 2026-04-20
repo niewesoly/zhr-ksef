@@ -1,6 +1,6 @@
 import { suite, test } from "node:test";
 import { strict as assert } from "node:assert";
-import { fmtDate, fmtMoney, fmtQty, isSafeUrl, buildAdresLines } from "../../src/visualization/format.js";
+import { fmtDate, fmtMoney, fmtMoneyStr, fmtQty, isSafeUrl, buildAdresLines } from "../../src/visualization/format.js";
 
 suite("fmtDate", () => {
   test("null returns em dash", () => {
@@ -63,6 +63,36 @@ suite("fmtMoney", () => {
 
   test("undefined currency omitted (no trailing space)", () => {
     assert.equal(fmtMoney(10, undefined), "10.00");
+  });
+});
+
+suite("fmtMoneyStr", () => {
+  test("null returns em dash", () => {
+    assert.equal(fmtMoneyStr(null, "PLN"), "—");
+  });
+
+  test("zero string formats with two decimal places", () => {
+    assert.equal(fmtMoneyStr("0", "PLN"), "0.00 PLN");
+  });
+
+  test("decimal string formats with two decimal places", () => {
+    assert.equal(fmtMoneyStr("123.40", "EUR"), "123.40 EUR");
+  });
+
+  test("null currency omitted (no trailing space)", () => {
+    assert.equal(fmtMoneyStr("100", null), "100.00");
+  });
+
+  test("undefined currency omitted (no trailing space)", () => {
+    assert.equal(fmtMoneyStr("100", undefined), "100.00");
+  });
+
+  test("integer string formats with two decimal places", () => {
+    assert.equal(fmtMoneyStr("99", "PLN"), "99.00 PLN");
+  });
+
+  test("non-numeric string returns em dash", () => {
+    assert.equal(fmtMoneyStr("not-a-number", "PLN"), "—");
   });
 });
 

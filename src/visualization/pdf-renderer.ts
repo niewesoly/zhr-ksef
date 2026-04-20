@@ -25,7 +25,7 @@ import {
 } from "../ksef/dictionaries.js";
 import type { AdnotacjeInput } from "../ksef/dictionaries.js";
 import { tableCell, tableRow, tableHeader, tableContainer } from "./pdf-table.js";
-import { buildAdresLines } from "./format.js";
+import { fmtDate, fmtMoney, fmtMoneyStr, fmtQty, buildAdresLines } from "./format.js";
 
 const fontsDir = new URL("../assets/fonts/", import.meta.url).pathname;
 Font.register({
@@ -106,29 +106,6 @@ const styles = StyleSheet.create({
   totalLabel: { fontFamily: "LiberationSans", fontWeight: "bold", flexGrow: 1, textAlign: "right", paddingRight: 6 },
   totalValue: { fontFamily: "LiberationSans", fontWeight: "bold", width: 80, textAlign: "right" },
 });
-
-function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  const m = d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return "—";
-  return `${m[3]}.${m[2]}.${m[1]}`;
-}
-
-function fmtMoney(n: number | null, currency: string | null | undefined): string {
-  if (n == null) return "—";
-  return `${n.toFixed(2)} ${currency ?? ""}`.trim();
-}
-
-function fmtMoneyStr(s: string | null, currency: string | null | undefined): string {
-  if (s == null) return "—";
-  const n = parseFloat(s);
-  return isNaN(n) ? "—" : fmtMoney(n, currency);
-}
-
-function fmtQty(n: number | null): string {
-  if (n == null) return "—";
-  return Number.isInteger(n) ? String(n) : n.toString();
-}
 
 function dlRow(label: string, value: string, two = false): ReactElement {
   return h(
