@@ -25,7 +25,7 @@ import {
 } from "../ksef/dictionaries.js";
 import type { AdnotacjeInput } from "../ksef/dictionaries.js";
 import { tableCell, tableRow, tableHeader, tableContainer } from "./pdf-table.js";
-import { fmtDate, fmtMoney, fmtMoneyStr, fmtQty, buildAdresLines, hasText } from "./format.js";
+import { fmtDate, fmtMoney, fmtMoneyStr, fmtQty, buildAdresLines, hasText, getCurrencyOrPln } from "./format.js";
 
 const fontsDir = new URL("../assets/fonts/", import.meta.url).pathname;
 Font.register({
@@ -470,7 +470,7 @@ function rozliczenie(invoice: InvoiceFa3): ReactElement | null {
 function platnosc(invoice: InvoiceFa3): ReactElement | null {
   const pmt = invoice.payment;
   if (!pmt) return null;
-  const currency = invoice.currency;
+  const currency = getCurrencyOrPln(invoice.currency);
   const infoLabel =
     zaplacono(pmt.zaplacono) ??
     znacznikZaplatyCzesciowej(pmt.znacznikZaplatyCzesciowej) ??

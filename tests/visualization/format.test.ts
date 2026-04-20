@@ -1,6 +1,6 @@
 import { suite, test } from "node:test";
 import { strict as assert } from "node:assert";
-import { fmtDate, fmtMoney, fmtMoneyStr, fmtQty, isSafeUrl, buildAdresLines, hasText } from "../../src/visualization/format.js";
+import { fmtDate, fmtMoney, fmtMoneyStr, fmtQty, isSafeUrl, buildAdresLines, hasText, getCurrencyOrPln } from "../../src/visualization/format.js";
 
 suite("fmtDate", () => {
   test("null returns em dash", () => {
@@ -225,4 +225,17 @@ test("hasText narrows type so caller can drop non-null assertion", () => {
   } else {
     assert.fail("expected hasText to narrow to string");
   }
+});
+
+test("getCurrencyOrPln falls back to PLN for null/undefined/empty", () => {
+  assert.strictEqual(getCurrencyOrPln(null), "PLN");
+  assert.strictEqual(getCurrencyOrPln(undefined), "PLN");
+  assert.strictEqual(getCurrencyOrPln(""), "PLN");
+  assert.strictEqual(getCurrencyOrPln("   "), "PLN");
+});
+
+test("getCurrencyOrPln returns provided currency code", () => {
+  assert.strictEqual(getCurrencyOrPln("EUR"), "EUR");
+  assert.strictEqual(getCurrencyOrPln("USD"), "USD");
+  assert.strictEqual(getCurrencyOrPln("PLN"), "PLN");
 });

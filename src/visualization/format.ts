@@ -72,3 +72,12 @@ export function buildAdresLines(
 export function hasText(s: string | null | undefined): s is string {
   return s != null && s.trim() !== "";
 }
+
+/**
+ * Return the provided ISO-4217-style currency code, or "PLN" as a fallback
+ * when the input is null, undefined, or blank. Matches ziher's historical
+ * behavior for invoices whose P_14 currency field was never populated.
+ */
+export function getCurrencyOrPln(c: string | null | undefined): string {
+  return c != null && c.trim() !== "" ? c : "PLN";
+}
