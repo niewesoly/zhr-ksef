@@ -15,6 +15,7 @@ export interface RetryOptions {
   maxRetries: number;
   isRetryable: (err: unknown) => boolean;
   backoffMs?: (attempt: number) => number;
+  onRetry?: (err: unknown, attempt: number, delayMs: number) => void;
 }
 
 export async function withRetry<T>(
@@ -30,7 +31,9 @@ export async function withRetry<T>(
       lastError = err;
       if (!opts.isRetryable(err)) throw err;
       if (attempt < opts.maxRetries - 1) {
-        await new Promise((r) => setTimeout(r, backoff(attempt)));
+        const delay = backoff(attempt);
+        opts.onRetry?.(err, attempt, delay);
+        await new Promise((r) => setTimeout(r, delay));
       }
     }
   }

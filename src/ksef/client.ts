@@ -174,10 +174,8 @@ export async function ksefFetch<T>(
         {
           maxRetries: KSEF_HTTP_CONFIG.maxRetries,
           isRetryable: (e) => !(e instanceof KsefApiError) && !(e instanceof RateLimitedError),
-          backoffMs: (attempt) => {
-            const delay = 2 ** attempt * 1000;
-            log.warn({ path, attempt: attempt + 1, delay }, "connection error, retrying");
-            return delay;
+          onRetry: (err, attempt, delay) => {
+            log.warn({ path, attempt: attempt + 1, delay, err }, "connection error, retrying");
           },
         },
       );
@@ -218,6 +216,9 @@ export async function ksefFetchBinary(
     {
       maxRetries: KSEF_HTTP_CONFIG.maxRetries,
       isRetryable: (e) => !(e instanceof KsefApiError),
+      onRetry: (err, attempt, delay) => {
+        log.warn({ url, attempt: attempt + 1, delay, err }, "binary fetch error, retrying");
+      },
     },
   );
 }
@@ -260,6 +261,9 @@ export async function ksefFetchXml<T>(
     {
       maxRetries: KSEF_HTTP_CONFIG.maxRetries,
       isRetryable: (e) => !(e instanceof KsefApiError),
+      onRetry: (err, attempt, delay) => {
+        log.warn({ path, attempt: attempt + 1, delay, err }, "xml fetch error, retrying");
+      },
     },
   );
 }
