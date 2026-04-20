@@ -58,7 +58,7 @@ export interface InvoiceParty {
 
 export interface InvoiceLineItem {
   lp: number;
-  uuid: string | null;
+  nrWierszaFa: string | null;
   nazwa: string | null;
   cenaJednNetto: number | null;
   cenaJednBrutto: number | null;
@@ -431,7 +431,7 @@ function parseLineItems(fa: Record<string, unknown>): InvoiceLineItem[] {
       computeBrutto(wartoscNetto, stawkaPodatku);
     return {
       lp: findFieldNumber(row, "NrWierszaFa") ?? idx + 1,
-      uuid: findFieldString(row, "NrWierszaFa"),
+      nrWierszaFa: findFieldString(row, "NrWierszaFa"),
       nazwa: findFieldString(row, "P_7"),
       cenaJednNetto: findFieldNumber(row, "P_9A"),
       cenaJednBrutto: findFieldNumber(row, "P_9B"),
@@ -785,8 +785,10 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
   const fa = findFieldRecord(faktura, "Fa");
   if (!fa) throw new Error("Brak elementu Fa w XML");
 
-  const podmiot1 = findFieldRecord(faktura, "Podmiot1") ?? {};
-  const podmiot2 = findFieldRecord(faktura, "Podmiot2") ?? {};
+  const podmiot1 = findFieldRecord(faktura, "Podmiot1");
+  if (!podmiot1) throw new Error("Brak elementu Podmiot1 (sprzedawca) w XML");
+  const podmiot2 = findFieldRecord(faktura, "Podmiot2");
+  if (!podmiot2) throw new Error("Brak elementu Podmiot2 (nabywca) w XML");
 
   const invoiceType = findFieldString(fa, "RodzajFaktury");
   const invoiceTypeLabel = (invoiceType ? (INVOICE_TYPE_LABEL[invoiceType] ?? invoiceType) : null) ?? "Faktura";
