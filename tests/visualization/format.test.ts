@@ -1,6 +1,6 @@
 import { suite, test } from "node:test";
 import { strict as assert } from "node:assert";
-import { fmtDate, fmtMoney, fmtMoneyStr, fmtQty, isSafeUrl, buildAdresLines } from "../../src/visualization/format.js";
+import { fmtDate, fmtMoney, fmtMoneyStr, fmtQty, isSafeUrl, buildAdresLines, hasText } from "../../src/visualization/format.js";
 
 suite("fmtDate", () => {
   test("null returns em dash", () => {
@@ -202,4 +202,27 @@ suite("buildAdresLines", () => {
     );
     assert.deepEqual(lines, []);
   });
+});
+
+test("hasText returns false for null/undefined/empty/whitespace", () => {
+  assert.strictEqual(hasText(null), false);
+  assert.strictEqual(hasText(undefined), false);
+  assert.strictEqual(hasText(""), false);
+  assert.strictEqual(hasText("   "), false);
+  assert.strictEqual(hasText("\t\n"), false);
+});
+
+test("hasText returns true for non-empty strings", () => {
+  assert.strictEqual(hasText("abc"), true);
+  assert.strictEqual(hasText("  abc  "), true);
+});
+
+test("hasText narrows type so caller can drop non-null assertion", () => {
+  const x: string | null = "abc";
+  if (hasText(x)) {
+    // TS should accept .length without `!` — this line compiles iff the guard works
+    assert.strictEqual(x.length, 3);
+  } else {
+    assert.fail("expected hasText to narrow to string");
+  }
 });

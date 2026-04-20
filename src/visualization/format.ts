@@ -64,3 +64,11 @@ export function buildAdresLines(
   const lines: (string | null)[] = [adres.adresL1, adres.adresL2, krajFn(adres.kodKraju)];
   return lines.filter((l): l is string => l !== null && l.trim() !== "");
 }
+
+/**
+ * Returns true only when the input is a non-empty, non-whitespace string.
+ * Acts as a type guard so callers can drop `!` inside the branch.
+ */
+export function hasText(s: string | null | undefined): s is string {
+  return s != null && s.trim() !== "";
+}
