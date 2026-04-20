@@ -56,27 +56,43 @@ function padOrTrimCoord(buf: Buffer, coordLen: number): Buffer {
   return padded;
 }
 
-/** Converts an ECDSA signature from DER (ASN.1) to raw R||S (IEEE P1363), as required by XAdES. */
-function ecDerToRawSignature(derSig: Buffer, coordLen: number): Buffer {
-  // DER SEQUENCE { INTEGER r, INTEGER s }
+/**
+ * Converts an ECDSA signature from DER (ASN.1) to raw R||S (IEEE P1363),
+ * as required by XAdES. Exported only for unit tests — treat as internal.
+ * @internal
+ */
+export function ecDerToRawSignature(derSig: Buffer, coordLen: number): Buffer {
+  // DER SEQUENCE { INTEGER r, INTEGER s } — validate tags AND lengths
+  // against remaining buffer so a truncated blob throws rather than
+  // silently returning a clamped subarray.
   let offset = 2; // skip SEQUENCE tag + length
-  if (derSig[offset] === 0x02) {
-    offset++;
-    const rLen = derSig[offset]!;
-    offset++;
-    const r = derSig.subarray(offset, offset + rLen);
-    offset += rLen;
-    if (derSig[offset] === 0x02) {
-      offset++;
-      const sLen = derSig[offset]!;
-      offset++;
-      const s = derSig.subarray(offset, offset + sLen);
-      const rPadded = padOrTrimCoord(r, coordLen);
-      const sPadded = padOrTrimCoord(s, coordLen);
-      return Buffer.concat([rPadded, sPadded]);
-    }
+
+  if (derSig[offset] !== 0x02) {
+    throw new Error("Nieprawidłowy format podpisu DER ECDSA");
   }
-  throw new Error("Nieprawidłowy format podpisu DER ECDSA");
+  offset++;
+  const rLen = derSig[offset]!;
+  offset++;
+  if (offset + rLen > derSig.length) {
+    throw new Error("Nieprawidłowy format podpisu DER ECDSA");
+  }
+  const r = derSig.subarray(offset, offset + rLen);
+  offset += rLen;
+
+  if (derSig[offset] !== 0x02) {
+    throw new Error("Nieprawidłowy format podpisu DER ECDSA");
+  }
+  offset++;
+  const sLen = derSig[offset]!;
+  offset++;
+  if (offset + sLen > derSig.length) {
+    throw new Error("Nieprawidłowy format podpisu DER ECDSA");
+  }
+  const s = derSig.subarray(offset, offset + sLen);
+
+  const rPadded = padOrTrimCoord(r, coordLen);
+  const sPadded = padOrTrimCoord(s, coordLen);
+  return Buffer.concat([rPadded, sPadded]);
 }
 
 interface KeyAlgInfo {
