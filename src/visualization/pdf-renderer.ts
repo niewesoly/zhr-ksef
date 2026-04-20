@@ -25,6 +25,7 @@ import {
 } from "../ksef/dictionaries.js";
 import type { AdnotacjeInput } from "../ksef/dictionaries.js";
 import { tableCell, tableRow, tableHeader, tableContainer } from "./pdf-table.js";
+import { buildAdresLines } from "./format.js";
 
 const fontsDir = new URL("../assets/fonts/", import.meta.url).pathname;
 Font.register({
@@ -217,18 +218,12 @@ function correctionReasonSection(invoice: InvoiceFa3): ReactElement | null {
 
 // E5: Podmioty side-by-side
 
-function buildAdresLines(addr: { adresL1: string | null; adresL2: string | null; kodKraju: string | null } | null): string[] {
-  if (!addr) return [];
-  const lines: (string | null)[] = [addr.adresL1, addr.adresL2, kraj(addr.kodKraju)];
-  return lines.filter((l): l is string => l !== null && l.trim() !== "");
-}
-
 type PodmiotRole = "sprzedawca" | "nabywca" | "odbiorca";
 
 function podmiotCard(title: string, p: InvoiceParty, role: PodmiotRole): ReactElement {
   const nipParts = [p.prefiksPodatnika, p.nip].filter((x): x is string => x !== null && x.trim() !== "");
-  const adresLines = buildAdresLines(p.adres);
-  const adresKorespLines = buildAdresLines(p.adresKoresp);
+  const adresLines = buildAdresLines(p.adres, kraj);
+  const adresKorespLines = buildAdresLines(p.adresKoresp, kraj);
 
   const row = (label: string, value: string): ReactElement =>
     h(View, { style: styles.partyRow },
