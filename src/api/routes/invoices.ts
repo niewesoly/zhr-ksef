@@ -3,6 +3,8 @@ import { Hono } from "hono";
 import type { Tx } from "../../db/index.js";
 import { invoiceEvents, invoices } from "../../db/schema.js";
 import type { InvoiceFa3 } from "../../ksef/parser.js";
+import { InvoiceFa3ShapeCheck } from "../../ksef/types.js";
+import type { Logger } from "../../lib/logger.js";
 import {
   getRender,
   renderKey,
@@ -168,6 +170,7 @@ function bodyFromBuffer(buf: Buffer): ArrayBuffer {
 async function loadParsedInvoice(
   tx: Tx,
   iid: string,
+  logger: Logger,
 ): Promise<{ ksefNumber: string; parsed: InvoiceFa3 } | null> {
   const [row] = await tx
     .select({ parsedData: invoices.parsedData, ksefNumber: invoices.ksefNumber })
@@ -175,6 +178,13 @@ async function loadParsedInvoice(
     .where(eq(invoices.id, iid))
     .limit(1);
   if (!row || !row.parsedData) return null;
+  const shapeCheck = InvoiceFa3ShapeCheck.safeParse(row.parsedData);
+  if (!shapeCheck.success) {
+    logger.warn(
+      { issues: shapeCheck.error.issues, invoiceId: iid },
+      "parsedData failed shape check; falling through to renderer anyway",
+    );
+  }
   return { ksefNumber: row.ksefNumber, parsed: row.parsedData as InvoiceFa3 };
 }
 
@@ -193,7 +203,7 @@ invoicesRouter.get("/:iid/html", async (c) => {
     return c.body(bodyFromBuffer(cached.buf));
   }
 
-  const found = await loadParsedInvoice(c.get("tx"), iid);
+  const found = await loadParsedInvoice(c.get("tx"), iid, c.get("logger"));
   if (!found) return c.json({ error: "not_found" }, 404);
 
   const html = renderInvoiceHtml(found.parsed);
@@ -215,7 +225,7 @@ invoicesRouter.get("/:iid/pdf", async (c) => {
     return c.body(bodyFromBuffer(cached.buf));
   }
 
-  const found = await loadParsedInvoice(c.get("tx"), iid);
+  const found = await loadParsedInvoice(c.get("tx"), iid, c.get("logger"));
   if (!found) return c.json({ error: "not_found" }, 404);
 
   const buf = await renderInvoicePdf(found.parsed);
