@@ -56,27 +56,66 @@ function padOrTrimCoord(buf: Buffer, coordLen: number): Buffer {
   return padded;
 }
 
-/** Converts an ECDSA signature from DER (ASN.1) to raw R||S (IEEE P1363), as required by XAdES. */
-function ecDerToRawSignature(derSig: Buffer, coordLen: number): Buffer {
-  // DER SEQUENCE { INTEGER r, INTEGER s }
-  let offset = 2; // skip SEQUENCE tag + length
-  if (derSig[offset] === 0x02) {
-    offset++;
-    const rLen = derSig[offset]!;
-    offset++;
-    const r = derSig.subarray(offset, offset + rLen);
-    offset += rLen;
-    if (derSig[offset] === 0x02) {
-      offset++;
-      const sLen = derSig[offset]!;
-      offset++;
-      const s = derSig.subarray(offset, offset + sLen);
-      const rPadded = padOrTrimCoord(r, coordLen);
-      const sPadded = padOrTrimCoord(s, coordLen);
-      return Buffer.concat([rPadded, sPadded]);
-    }
+/**
+ * Converts an ECDSA signature from DER (ASN.1) to raw R||S (IEEE P1363),
+ * as required by XAdES. Exported only for unit tests — treat as internal.
+ *
+ * Validates tags and lengths at each step so a truncated or malformed
+ * blob throws rather than silently returning a clamped subarray.
+ * Supports both short-form (≤127 bytes) and long-form (one length byte,
+ * 0x81) SEQUENCE length encodings — the latter is required for P-521.
+ * @internal
+ */
+export function ecDerToRawSignature(derSig: Buffer, coordLen: number): Buffer {
+  const invalid = () => new Error("Nieprawidłowy format podpisu DER ECDSA");
+
+  // DER SEQUENCE tag at offset 0
+  if (derSig.length < 2 || derSig[0] !== 0x30) throw invalid();
+
+  // SEQUENCE length: short-form (len < 0x80) or long-form 0x81 <lenByte>
+  let offset: number;
+  let seqLen: number;
+  const firstLen = derSig[1];
+  if (firstLen === undefined) throw invalid();
+  if (firstLen < 0x80) {
+    seqLen = firstLen;
+    offset = 2;
+  } else if (firstLen === 0x81) {
+    if (derSig.length < 3) throw invalid();
+    seqLen = derSig[2]!;
+    offset = 3;
+  } else {
+    // Longer length encodings (0x82+) not expected for ECDSA signatures.
+    throw invalid();
   }
-  throw new Error("Nieprawidłowy format podpisu DER ECDSA");
+  if (offset + seqLen !== derSig.length) throw invalid();
+
+  // INTEGER r
+  if (offset >= derSig.length || derSig[offset] !== 0x02) throw invalid();
+  offset++;
+  if (offset >= derSig.length) throw invalid();
+  const rLen = derSig[offset]!;
+  offset++;
+  if (rLen === 0 || offset + rLen > derSig.length) throw invalid();
+  const r = derSig.subarray(offset, offset + rLen);
+  offset += rLen;
+
+  // INTEGER s
+  if (offset >= derSig.length || derSig[offset] !== 0x02) throw invalid();
+  offset++;
+  if (offset >= derSig.length) throw invalid();
+  const sLen = derSig[offset]!;
+  offset++;
+  if (sLen === 0 || offset + sLen > derSig.length) throw invalid();
+  const s = derSig.subarray(offset, offset + sLen);
+  offset += sLen;
+
+  // Trailing bytes after s are invalid
+  if (offset !== derSig.length) throw invalid();
+
+  const rPadded = padOrTrimCoord(r, coordLen);
+  const sPadded = padOrTrimCoord(s, coordLen);
+  return Buffer.concat([rPadded, sPadded]);
 }
 
 interface KeyAlgInfo {

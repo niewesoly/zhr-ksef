@@ -1,6 +1,6 @@
 import { suite, test } from "node:test";
 import { strict as assert } from "node:assert";
-import { fmtDate, fmtMoney, fmtQty, isSafeUrl, buildAdresLines } from "../../src/visualization/format.js";
+import { fmtDate, fmtMoney, fmtMoneyStr, fmtQty, isSafeUrl, buildAdresLines, hasText, getCurrencyOrPln } from "../../src/visualization/format.js";
 
 suite("fmtDate", () => {
   test("null returns em dash", () => {
@@ -63,6 +63,44 @@ suite("fmtMoney", () => {
 
   test("undefined currency omitted (no trailing space)", () => {
     assert.equal(fmtMoney(10, undefined), "10.00");
+  });
+});
+
+suite("fmtMoneyStr", () => {
+  test("null returns em dash", () => {
+    assert.equal(fmtMoneyStr(null, "PLN"), "—");
+  });
+
+  test("zero string formats with two decimal places", () => {
+    assert.equal(fmtMoneyStr("0", "PLN"), "0.00 PLN");
+  });
+
+  test("decimal string formats with two decimal places", () => {
+    assert.equal(fmtMoneyStr("123.40", "EUR"), "123.40 EUR");
+  });
+
+  test("null currency omitted (no trailing space)", () => {
+    assert.equal(fmtMoneyStr("100", null), "100.00");
+  });
+
+  test("undefined currency omitted (no trailing space)", () => {
+    assert.equal(fmtMoneyStr("100", undefined), "100.00");
+  });
+
+  test("integer string formats with two decimal places", () => {
+    assert.equal(fmtMoneyStr("99", "PLN"), "99.00 PLN");
+  });
+
+  test("non-numeric string returns em dash", () => {
+    assert.equal(fmtMoneyStr("not-a-number", "PLN"), "—");
+  });
+
+  test("fmtMoneyStr returns '—' for empty string", () => {
+    assert.strictEqual(fmtMoneyStr("", "PLN"), "—");
+  });
+
+  test("fmtMoneyStr returns '—' for whitespace-only string", () => {
+    assert.strictEqual(fmtMoneyStr("   ", "PLN"), "—");
   });
 });
 
@@ -164,4 +202,40 @@ suite("buildAdresLines", () => {
     );
     assert.deepEqual(lines, []);
   });
+});
+
+test("hasText returns false for null/undefined/empty/whitespace", () => {
+  assert.strictEqual(hasText(null), false);
+  assert.strictEqual(hasText(undefined), false);
+  assert.strictEqual(hasText(""), false);
+  assert.strictEqual(hasText("   "), false);
+  assert.strictEqual(hasText("\t\n"), false);
+});
+
+test("hasText returns true for non-empty strings", () => {
+  assert.strictEqual(hasText("abc"), true);
+  assert.strictEqual(hasText("  abc  "), true);
+});
+
+test("hasText narrows type so caller can drop non-null assertion", () => {
+  const x: string | null = "abc";
+  if (hasText(x)) {
+    // TS should accept .length without `!` — this line compiles iff the guard works
+    assert.strictEqual(x.length, 3);
+  } else {
+    assert.fail("expected hasText to narrow to string");
+  }
+});
+
+test("getCurrencyOrPln falls back to PLN for null/undefined/empty", () => {
+  assert.strictEqual(getCurrencyOrPln(null), "PLN");
+  assert.strictEqual(getCurrencyOrPln(undefined), "PLN");
+  assert.strictEqual(getCurrencyOrPln(""), "PLN");
+  assert.strictEqual(getCurrencyOrPln("   "), "PLN");
+});
+
+test("getCurrencyOrPln returns provided currency code", () => {
+  assert.strictEqual(getCurrencyOrPln("EUR"), "EUR");
+  assert.strictEqual(getCurrencyOrPln("USD"), "USD");
+  assert.strictEqual(getCurrencyOrPln("PLN"), "PLN");
 });

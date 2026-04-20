@@ -129,3 +129,16 @@ export const ExportMetadataSchema = z.object({
   metadataList: z.array(InvoiceMetadataItemSchema),
 });
 export type ExportMetadata = z.infer<typeof ExportMetadataSchema>;
+
+// Minimal top-level shape assertion for rows written by earlier parser
+// versions. Fails loudly if required fields were never populated.
+export const InvoiceFa3ShapeCheck = z
+  .object({
+    ksefNumber: z.string(),
+    invoiceNumber: z.string().nullable(),
+    issueDate: z.string().nullable(),
+    seller: z.unknown(),
+    buyer: z.unknown(),
+    lineItems: z.array(z.unknown()),
+  })
+  .passthrough();

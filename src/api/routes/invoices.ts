@@ -1,9 +1,10 @@
 import { and, desc, eq, gte, lte, or } from "drizzle-orm";
 import { Hono } from "hono";
-import { z } from "zod";
 import type { Tx } from "../../db/index.js";
 import { invoiceEvents, invoices } from "../../db/schema.js";
 import type { InvoiceFa3 } from "../../ksef/parser.js";
+import { InvoiceFa3ShapeCheck } from "../../ksef/types.js";
+import type { Logger } from "../../lib/logger.js";
 import {
   getRender,
   renderKey,
@@ -15,6 +16,8 @@ import {
   InvalidTransitionError,
 } from "../../workflow/state-machine.js";
 import { transitionInvoice } from "../../workflow/transition.js";
+import { parseJsonBody } from "../middleware/parse-json-body.js";
+import { InvoiceListQuery, TransitionRequest } from "../openapi/schemas.js";
 import type { AppEnv } from "../types.js";
 
 const CSP_HTML = [
@@ -26,17 +29,6 @@ const CSP_HTML = [
   "form-action 'none'",
   "frame-ancestors 'none'",
 ].join("; ");
-
-const listQuerySchema = z.object({
-  status: z
-    .enum(["synced", "pending", "unassigned", "assigned", "imported", "dismissed"])
-    .optional(),
-  nip: z.string().max(20).optional(),
-  dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(200).default(50),
-});
 
 function invoiceSummary(row: typeof invoices.$inferSelect) {
   return {
@@ -62,7 +54,7 @@ export const invoicesRouter = new Hono<AppEnv>();
 
 invoicesRouter.get("/", async (c) => {
   const tx = c.get("tx");
-  const query = listQuerySchema.parse(
+  const query = InvoiceListQuery.parse(
     Object.fromEntries(new URL(c.req.url).searchParams),
   );
 
@@ -105,18 +97,12 @@ invoicesRouter.get("/:iid", async (c) => {
   });
 });
 
-const transitionSchema = z.object({
-  action: z.enum(["release", "assign", "import", "dismiss"]),
-  actor: z.string().max(200).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
-invoicesRouter.post("/:iid/transition", async (c) => {
+invoicesRouter.post("/:iid/transition", parseJsonBody, async (c) => {
   const tx = c.get("tx");
   const tenant = c.get("tenant");
   const iid = c.req.param("iid");
-  const body = await c.req.json().catch(() => ({}));
-  const parsed = transitionSchema.parse(body);
+  const body = c.get("body");
+  const parsed = TransitionRequest.parse(body);
 
   try {
     const result = await transitionInvoice(tx, {
@@ -184,6 +170,7 @@ function bodyFromBuffer(buf: Buffer): ArrayBuffer {
 async function loadParsedInvoice(
   tx: Tx,
   iid: string,
+  logger: Logger,
 ): Promise<{ ksefNumber: string; parsed: InvoiceFa3 } | null> {
   const [row] = await tx
     .select({ parsedData: invoices.parsedData, ksefNumber: invoices.ksefNumber })
@@ -191,6 +178,13 @@ async function loadParsedInvoice(
     .where(eq(invoices.id, iid))
     .limit(1);
   if (!row || !row.parsedData) return null;
+  const shapeCheck = InvoiceFa3ShapeCheck.safeParse(row.parsedData);
+  if (!shapeCheck.success) {
+    logger.warn(
+      { issues: shapeCheck.error.issues, invoiceId: iid },
+      "parsedData failed shape check; falling through to renderer anyway",
+    );
+  }
   return { ksefNumber: row.ksefNumber, parsed: row.parsedData as InvoiceFa3 };
 }
 
@@ -209,7 +203,7 @@ invoicesRouter.get("/:iid/html", async (c) => {
     return c.body(bodyFromBuffer(cached.buf));
   }
 
-  const found = await loadParsedInvoice(c.get("tx"), iid);
+  const found = await loadParsedInvoice(c.get("tx"), iid, c.get("logger"));
   if (!found) return c.json({ error: "not_found" }, 404);
 
   const html = renderInvoiceHtml(found.parsed);
@@ -231,7 +225,7 @@ invoicesRouter.get("/:iid/pdf", async (c) => {
     return c.body(bodyFromBuffer(cached.buf));
   }
 
-  const found = await loadParsedInvoice(c.get("tx"), iid);
+  const found = await loadParsedInvoice(c.get("tx"), iid, c.get("logger"));
   if (!found) return c.json({ error: "not_found" }, 404);
 
   const buf = await renderInvoicePdf(found.parsed);

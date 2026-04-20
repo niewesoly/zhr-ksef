@@ -1,6 +1,7 @@
 import { type KsefCredentials, getAccessToken } from "./auth.js";
 import { fetchCertificate } from "./certificates.js";
 import { ksefFetch, ksefFetchBinary } from "./client.js";
+import { KSEF_HTTP_CONFIG } from "./config.js";
 import {
   type AesCredentials,
   decryptAesCbc,
@@ -14,9 +15,6 @@ import {
   ExportStatusSchema,
   type ExportStatus,
 } from "./types.js";
-
-const POLL_INTERVAL_MS = 10_000;
-const POLL_TIMEOUT_MS = 5 * 60 * 1000;
 
 // Hard cap on encrypted ZIP part. Guards against memory exhaustion when a
 // hostile or misbehaving MF host returns an unbounded download.
@@ -81,7 +79,7 @@ export async function pollExportStatus(
   const accessToken = await getAccessToken(tenantId, credentials);
   const startTime = Date.now();
 
-  while (Date.now() - startTime < POLL_TIMEOUT_MS) {
+  while (Date.now() - startTime < KSEF_HTTP_CONFIG.pollTimeoutMs) {
     const status = await ksefFetch(
       credentials.apiUrl,
       `/invoices/exports/${referenceNumber}`,
@@ -102,10 +100,12 @@ export async function pollExportStatus(
       );
     }
 
-    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    await new Promise((resolve) => setTimeout(resolve, KSEF_HTTP_CONFIG.pollIntervalMs));
   }
 
-  throw new Error(`Timeout pollowania statusu eksportu (${POLL_TIMEOUT_MS / 1000}s)`);
+  throw new Error(
+    `Timeout pollowania statusu eksportu (${KSEF_HTTP_CONFIG.pollTimeoutMs / 1000}s)`,
+  );
 }
 
 /** Downloads a ZIP part from a pre-signed URL and AES-CBC-decrypts it.

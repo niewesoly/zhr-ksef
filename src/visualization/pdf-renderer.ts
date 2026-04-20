@@ -25,6 +25,7 @@ import {
 } from "../ksef/dictionaries.js";
 import type { AdnotacjeInput } from "../ksef/dictionaries.js";
 import { tableCell, tableRow, tableHeader, tableContainer } from "./pdf-table.js";
+import { fmtDate, fmtMoney, fmtMoneyStr, fmtQty, buildAdresLines, hasText, getCurrencyOrPln } from "./format.js";
 
 const fontsDir = new URL("../assets/fonts/", import.meta.url).pathname;
 Font.register({
@@ -105,29 +106,6 @@ const styles = StyleSheet.create({
   totalLabel: { fontFamily: "LiberationSans", fontWeight: "bold", flexGrow: 1, textAlign: "right", paddingRight: 6 },
   totalValue: { fontFamily: "LiberationSans", fontWeight: "bold", width: 80, textAlign: "right" },
 });
-
-function fmtDate(d: string | null | undefined): string {
-  if (!d) return "—";
-  const m = d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return "—";
-  return `${m[3]}.${m[2]}.${m[1]}`;
-}
-
-function fmtMoney(n: number | null, currency: string | null | undefined): string {
-  if (n == null) return "—";
-  return `${n.toFixed(2)} ${currency ?? ""}`.trim();
-}
-
-function fmtMoneyStr(s: string | null, currency: string | null | undefined): string {
-  if (s == null) return "—";
-  const n = parseFloat(s);
-  return isNaN(n) ? "—" : fmtMoney(n, currency);
-}
-
-function fmtQty(n: number | null): string {
-  if (n == null) return "—";
-  return Number.isInteger(n) ? String(n) : n.toString();
-}
 
 function dlRow(label: string, value: string, two = false): ReactElement {
   return h(
@@ -217,18 +195,12 @@ function correctionReasonSection(invoice: InvoiceFa3): ReactElement | null {
 
 // E5: Podmioty side-by-side
 
-function buildAdresLines(addr: { adresL1: string | null; adresL2: string | null; kodKraju: string | null } | null): string[] {
-  if (!addr) return [];
-  const lines: (string | null)[] = [addr.adresL1, addr.adresL2, kraj(addr.kodKraju)];
-  return lines.filter((l): l is string => l !== null && l.trim() !== "");
-}
-
 type PodmiotRole = "sprzedawca" | "nabywca" | "odbiorca";
 
 function podmiotCard(title: string, p: InvoiceParty, role: PodmiotRole): ReactElement {
   const nipParts = [p.prefiksPodatnika, p.nip].filter((x): x is string => x !== null && x.trim() !== "");
-  const adresLines = buildAdresLines(p.adres);
-  const adresKorespLines = buildAdresLines(p.adresKoresp);
+  const adresLines = buildAdresLines(p.adres, kraj);
+  const adresKorespLines = buildAdresLines(p.adresKoresp, kraj);
 
   const row = (label: string, value: string): ReactElement =>
     h(View, { style: styles.partyRow },
@@ -238,10 +210,10 @@ function podmiotCard(title: string, p: InvoiceParty, role: PodmiotRole): ReactEl
 
   const body: (ReactElement | null)[] = [];
   if (nipParts.length > 0) body.push(row("NIP:", nipParts.join(" ")));
-  if (p.nrEORI && p.nrEORI.trim() !== "") body.push(row("EORI:", p.nrEORI));
+  if (hasText(p.nrEORI)) body.push(row("EORI:", p.nrEORI));
   const vatUeParts = [p.kodUE, p.nrVatUE].filter((x): x is string => x !== null && x.trim() !== "");
   if (vatUeParts.length > 0) body.push(row("VAT UE:", vatUeParts.join(" ")));
-  if (p.nazwa && p.nazwa.trim() !== "") body.push(h(Text, { style: [styles.partyRow, styles.partyName] }, p.nazwa));
+  if (hasText(p.nazwa)) body.push(h(Text, { style: [styles.partyRow, styles.partyName] }, p.nazwa));
   adresLines.forEach((l) => body.push(textRow(l)));
   if (adresKorespLines.length > 0) {
     body.push(h(Text, { style: [styles.partyRow, styles.partyLabel] }, "Adres korespondencyjny:"));
@@ -254,8 +226,8 @@ function podmiotCard(title: string, p: InvoiceParty, role: PodmiotRole): ReactEl
     const text = email && telefon ? `${email} · ${telefon}` : email || telefon;
     body.push(textRow(text));
   });
-  if (role === "nabywca" && p.nrKlienta && p.nrKlienta.trim() !== "") body.push(row("Nr klienta:", p.nrKlienta));
-  if (role === "nabywca" && p.idNabywcy && p.idNabywcy.trim() !== "") body.push(row("ID nabywcy:", p.idNabywcy));
+  if (role === "nabywca" && hasText(p.nrKlienta)) body.push(row("Nr klienta:", p.nrKlienta));
+  if (role === "nabywca" && hasText(p.idNabywcy)) body.push(row("ID nabywcy:", p.idNabywcy));
   if (role === "nabywca" && p.jst) body.push(row("JST:", "TAK"));
   if (role === "nabywca" && p.gv) body.push(row("Grupa VAT:", "TAK"));
   if (role === "sprzedawca" && p.statusInfoPodatnika && p.statusInfoPodatnika.trim() !== "") {
@@ -498,7 +470,7 @@ function rozliczenie(invoice: InvoiceFa3): ReactElement | null {
 function platnosc(invoice: InvoiceFa3): ReactElement | null {
   const pmt = invoice.payment;
   if (!pmt) return null;
-  const currency = invoice.currency;
+  const currency = getCurrencyOrPln(invoice.currency);
   const infoLabel =
     zaplacono(pmt.zaplacono) ??
     znacznikZaplatyCzesciowej(pmt.znacznikZaplatyCzesciowej) ??

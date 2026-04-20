@@ -1,5 +1,7 @@
 import type { z } from "zod";
 import { logger } from "../lib/logger.js";
+import { KSEF_HTTP_CONFIG } from "./config.js";
+import { withRetry, withTimeout } from "./http-helpers.js";
 import { assertKsefUrl } from "./urls.js";
 
 const log = logger.child({ module: "ksef-client" });
@@ -106,10 +108,14 @@ export function parseKsefErrorMessage(body: string, fallback: string): string {
   }
 }
 
-const MAX_RETRIES = 3;
-const REQUEST_TIMEOUT_MS = 30_000;
-
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+class RateLimitedError extends Error {
+  constructor(public readonly retryAfterSeconds: number) {
+    super("rate limited");
+    this.name = "RateLimitedError";
+  }
+}
 
 export async function ksefFetch<T>(
   apiUrl: string,
@@ -125,57 +131,62 @@ export async function ksefFetch<T>(
   headers.set("Accept", "application/json");
   if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
 
-  let lastError: unknown;
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  // Preserve 429 Retry-After semantics — sleep and re-run the loop without
+  // counting against the retry budget.
+  while (true) {
     try {
-      const response = await fetch(targetUrl, {
-        ...fetchOptions,
-        headers,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
+      return await withRetry(
+        () =>
+          withTimeout(async (signal) => {
+            const response = await fetch(targetUrl, {
+              ...fetchOptions,
+              headers,
+              signal,
+            });
 
-      if (response.status === 429) {
-        const retryAfterRaw = parseInt(response.headers.get("Retry-After") ?? "", 10);
-        const retryAfter = Number.isFinite(retryAfterRaw) && retryAfterRaw > 0 ? retryAfterRaw : 60;
-        log.warn({ path, retryAfter }, "rate limited");
-        await sleep(retryAfter * 1000);
+            if (response.status === 429) {
+              const retryAfterRaw = parseInt(response.headers.get("Retry-After") ?? "", 10);
+              const retryAfter =
+                Number.isFinite(retryAfterRaw) && retryAfterRaw > 0 ? retryAfterRaw : 60;
+              log.warn({ path, retryAfter }, "rate limited");
+              throw new RateLimitedError(retryAfter);
+            }
+
+            if (!response.ok) {
+              const body = await response.text();
+              const detail = parseKsefErrorMessage(body, body.slice(0, 200));
+              throw new KsefApiError(
+                response.status,
+                body,
+                `KSeF API błąd ${response.status} (${path}): ${detail}`,
+              );
+            }
+
+            const json: unknown = await response.json();
+            const parsed = schema.safeParse(json);
+            if (!parsed.success) {
+              throw new Error(
+                `KSeF API: nieoczekiwana struktura odpowiedzi dla ${path}: ${parsed.error.message}`,
+              );
+            }
+            return parsed.data;
+          }, KSEF_HTTP_CONFIG.requestTimeoutMs),
+        {
+          maxRetries: KSEF_HTTP_CONFIG.maxRetries,
+          isRetryable: (e) => !(e instanceof KsefApiError) && !(e instanceof RateLimitedError),
+          onRetry: (err, attempt, delay) => {
+            log.warn({ path, attempt: attempt + 1, delay, err }, "connection error, retrying");
+          },
+        },
+      );
+    } catch (err) {
+      if (err instanceof RateLimitedError) {
+        await sleep(err.retryAfterSeconds * 1000);
         continue;
       }
-
-      if (!response.ok) {
-        const body = await response.text();
-        const detail = parseKsefErrorMessage(body, body.slice(0, 200));
-        throw new KsefApiError(
-          response.status,
-          body,
-          `KSeF API błąd ${response.status} (${path}): ${detail}`,
-        );
-      }
-
-      const json: unknown = await response.json();
-      const parsed = schema.safeParse(json);
-      if (!parsed.success) {
-        throw new Error(
-          `KSeF API: nieoczekiwana struktura odpowiedzi dla ${path}: ${parsed.error.message}`,
-        );
-      }
-      return parsed.data;
-    } catch (err) {
-      clearTimeout(timeoutId);
-      if (err instanceof KsefApiError) throw err;
-      lastError = err;
-      if (attempt < MAX_RETRIES - 1) {
-        const delay = 2 ** attempt * 1000;
-        log.warn({ path, attempt: attempt + 1, delay, err }, "connection error, retrying");
-        await sleep(delay);
-      }
+      throw err;
     }
   }
-
-  throw lastError ?? new Error(`KSeF API: wyczerpano próby dla ${path}`);
 }
 
 /** Fetches a raw binary payload (typically an export ZIP package).
@@ -188,24 +199,28 @@ export async function ksefFetchBinary(
   const headers: Record<string, string> = { Accept: "application/octet-stream" };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  try {
-    const response = await fetch(targetUrl, { headers, signal: controller.signal });
-    clearTimeout(timeoutId);
+  return withRetry(
+    () =>
+      withTimeout(async (signal) => {
+        const response = await fetch(targetUrl, { headers, signal });
 
-    if (!response.ok) {
-      const body = await response.text();
-      const detail = parseKsefErrorMessage(body, `HTTP ${response.status}`);
-      throw new KsefApiError(response.status, body, `Błąd pobierania paczki ZIP: ${detail}`);
-    }
+        if (!response.ok) {
+          const body = await response.text();
+          const detail = parseKsefErrorMessage(body, `HTTP ${response.status}`);
+          throw new KsefApiError(response.status, body, `Błąd pobierania paczki ZIP: ${detail}`);
+        }
 
-    const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
-  } catch (err) {
-    clearTimeout(timeoutId);
-    throw err;
-  }
+        const arrayBuffer = await response.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      }, KSEF_HTTP_CONFIG.requestTimeoutMs),
+    {
+      maxRetries: KSEF_HTTP_CONFIG.maxRetries,
+      isRetryable: (e) => !(e instanceof KsefApiError),
+      onRetry: (err, attempt, delay) => {
+        log.warn({ url, attempt: attempt + 1, delay, err }, "binary fetch error, retrying");
+      },
+    },
+  );
 }
 
 export async function ksefFetchXml<T>(
@@ -215,31 +230,40 @@ export async function ksefFetchXml<T>(
   schema: z.ZodSchema<T>,
 ): Promise<T> {
   const targetUrl = assertKsefUrl(`${apiUrl}/v2${path}`);
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  try {
-    const response = await fetch(targetUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/xml", Accept: "application/json" },
-      body: xmlBody,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      const body = await response.text();
-      const detail = parseKsefErrorMessage(body, body.slice(0, 300));
-      throw new KsefApiError(response.status, body, `KSeF XAdES błąd ${response.status}: ${detail}`);
-    }
+  return withRetry(
+    () =>
+      withTimeout(async (signal) => {
+        const response = await fetch(targetUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/xml", Accept: "application/json" },
+          body: xmlBody,
+          signal,
+        });
 
-    const json: unknown = await response.json();
-    const parsed = schema.safeParse(json);
-    if (!parsed.success) {
-      throw new Error(`KSeF XAdES: nieoczekiwana struktura odpowiedzi: ${parsed.error.message}`);
-    }
-    return parsed.data;
-  } catch (err) {
-    clearTimeout(timeoutId);
-    throw err;
-  }
+        if (!response.ok) {
+          const body = await response.text();
+          const detail = parseKsefErrorMessage(body, body.slice(0, 300));
+          throw new KsefApiError(
+            response.status,
+            body,
+            `KSeF XAdES błąd ${response.status}: ${detail}`,
+          );
+        }
+
+        const json: unknown = await response.json();
+        const parsed = schema.safeParse(json);
+        if (!parsed.success) {
+          throw new Error(`KSeF XAdES: nieoczekiwana struktura odpowiedzi: ${parsed.error.message}`);
+        }
+        return parsed.data;
+      }, KSEF_HTTP_CONFIG.requestTimeoutMs),
+    {
+      maxRetries: KSEF_HTTP_CONFIG.maxRetries,
+      isRetryable: (e) => !(e instanceof KsefApiError),
+      onRetry: (err, attempt, delay) => {
+        log.warn({ path, attempt: attempt + 1, delay, err }, "xml fetch error, retrying");
+      },
+    },
+  );
 }

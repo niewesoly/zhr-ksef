@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { db } from "../../db/index.js";
+import { db, firstOrThrow } from "../../db/index.js";
 import { tenants } from "../../db/schema.js";
 import {
   encryptField,
@@ -18,15 +19,14 @@ import {
 } from "../../ksef/cert-validate.js";
 import { adminAuthMiddleware } from "../middleware/admin-auth.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { parseJsonBody } from "../middleware/parse-json-body.js";
+import { KsefEnv, Nip } from "../openapi/schemas.js";
 import type { AppEnv } from "../types.js";
-
-const NIP = z.string().regex(/^\d{10}$/, "NIP must be 10 digits");
-const KSEF_ENV = z.enum(["production", "test", "demo"]);
 
 const createTenantSchema = z.object({
   name: z.string().min(1).max(200),
-  nip: NIP,
-  apiUrl: KSEF_ENV.default("test"),
+  nip: Nip,
+  apiUrl: KsefEnv.default("test"),
 });
 
 // PEM is delivered base64-encoded so callers can ship raw `.crt` / `.key`
@@ -42,8 +42,8 @@ const credentialsSchema = z.object({
 function decodePem(b64: string, label: string): string {
   const buf = Buffer.from(b64, "base64");
   if (buf.byteLength === 0) {
-    throw Object.assign(new Error(`${label} is empty or not valid base64`), {
-      status: 400,
+    throw new HTTPException(400, {
+      message: `${label} is empty or not valid base64`,
     });
   }
   return buf.toString("utf8");
@@ -51,8 +51,8 @@ function decodePem(b64: string, label: string): string {
 
 const patchTenantSchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  nip: NIP.optional(),
-  apiUrl: KSEF_ENV.optional(),
+  nip: Nip.optional(),
+  apiUrl: KsefEnv.optional(),
   syncEnabled: z.boolean().optional(),
   syncCron: z.string().max(100).nullable().optional(),
   credentials: credentialsSchema.optional(),
@@ -81,14 +81,14 @@ function publicTenantView(t: typeof tenants.$inferSelect) {
 function requireSelf(routeId: string, tenantId: string): void {
   if (routeId !== tenantId) {
     // Constant-like mismatch; do not disclose whether the tenant exists.
-    throw Object.assign(new Error("forbidden"), { status: 403 });
+    throw new HTTPException(403, { message: "forbidden" });
   }
 }
 
 const adminApp = new Hono<AppEnv>();
 
-adminApp.post("/", adminAuthMiddleware, async (c) => {
-  const body = await c.req.json().catch(() => ({}));
+adminApp.post("/", adminAuthMiddleware, parseJsonBody, async (c) => {
+  const body = c.get("body");
   const parsed = createTenantSchema.parse(body);
 
   const id = randomUUID();
@@ -96,7 +96,7 @@ adminApp.post("/", adminAuthMiddleware, async (c) => {
   const dekEnc = wrapDek(dek, id);
   const { id: apiKeyId, fullKey, hash } = await issueApiKey();
 
-  const [row] = await db
+  const rows = await db
     .insert(tenants)
     .values({
       id,
@@ -111,7 +111,7 @@ adminApp.post("/", adminAuthMiddleware, async (c) => {
 
   return c.json(
     {
-      tenant: publicTenantView(row!),
+      tenant: publicTenantView(firstOrThrow(rows, "tenants insert returned no row")),
       // `apiKey` is returned exactly once — the plaintext is never stored.
       apiKey: fullKey,
     },
@@ -137,11 +137,11 @@ tenantApp.get("/:id", async (c) => {
   return c.json({ tenant: publicTenantView(tenant) });
 });
 
-tenantApp.patch("/:id", async (c) => {
+tenantApp.patch("/:id", parseJsonBody, async (c) => {
   const tenant = c.get("tenant");
   requireSelf(c.req.param("id"), tenant.id);
 
-  const body = await c.req.json().catch(() => ({}));
+  const body = c.get("body");
   const parsed = patchTenantSchema.parse(body);
 
   const patch: Partial<typeof tenants.$inferInsert> = {};
@@ -178,14 +178,14 @@ tenantApp.patch("/:id", async (c) => {
   }
 
   patch.updatedAt = new Date();
-  const [updated] = await db
+  const updatedRows = await db
     .update(tenants)
     .set(patch)
     .where(eq(tenants.id, tenant.id))
     .returning();
 
   return c.json({
-    tenant: publicTenantView(updated!),
+    tenant: publicTenantView(firstOrThrow(updatedRows, "tenants update returned no row")),
     certificate: certValidation
       ? {
           notAfter: certValidation.notAfter,
@@ -240,7 +240,7 @@ tenantApp.delete("/:id/credentials", async (c) => {
   const tenant = c.get("tenant");
   requireSelf(c.req.param("id"), tenant.id);
 
-  const [updated] = await db
+  const updatedRows = await db
     .update(tenants)
     .set({
       certPemEnc: null,
@@ -253,7 +253,10 @@ tenantApp.delete("/:id/credentials", async (c) => {
     .returning();
 
   invalidateToken(tenant.id);
-  return c.json({ tenant: publicTenantView(updated!), cleared: true });
+  return c.json({
+    tenant: publicTenantView(firstOrThrow(updatedRows, "tenants credentials clear returned no row")),
+    cleared: true,
+  });
 });
 
 export const tenantsRouter = new Hono<AppEnv>();

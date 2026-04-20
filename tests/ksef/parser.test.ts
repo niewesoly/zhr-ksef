@@ -348,3 +348,31 @@ suite("parseInvoiceFa3: parser extensions", () => {
     assert.strictEqual(inv.okresFa, null);
   });
 });
+
+suite("parseInvoiceFa3: Podmiot guards", () => {
+  test("parseInvoiceFa3 throws when Podmiot1 (sprzedawca) is missing", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Faktura xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/">
+  <Podmiot2>
+    <DaneIdentyfikacyjne><NIP>9876543210</NIP></DaneIdentyfikacyjne>
+  </Podmiot2>
+  <Fa>
+    <RodzajFaktury>VAT</RodzajFaktury>
+  </Fa>
+</Faktura>`;
+    assert.throws(() => parseInvoiceFa3(xml, "TEST"), /Podmiot1|sprzedawca/i);
+  });
+
+  test("parseInvoiceFa3 throws when Podmiot2 (nabywca) is missing", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Faktura xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/">
+  <Podmiot1>
+    <DaneIdentyfikacyjne><NIP>1234567890</NIP></DaneIdentyfikacyjne>
+  </Podmiot1>
+  <Fa>
+    <RodzajFaktury>VAT</RodzajFaktury>
+  </Fa>
+</Faktura>`;
+    assert.throws(() => parseInvoiceFa3(xml, "TEST"), /Podmiot2|nabywca/i);
+  });
+});

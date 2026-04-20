@@ -1,7 +1,7 @@
 import type { FC } from "hono/jsx";
 import type { InvoiceFa3, InvoiceParty, Adnotacje, Rozliczenie, AdditionalInfo } from "../ksef/parser.js";
 import { rodzajFaktury, taxpayerStatus, kraj, rolaPodmiotu3Short, stawkaPodatku, adnotacjeFlags, zaplacono, znacznikZaplatyCzesciowej, formaPlatnosci, rodzajTransportu, gtu } from "../ksef/dictionaries.js";
-import { fmtDate, fmtMoney, fmtQty, buildAdresLines } from "./format.js";
+import { fmtDate, fmtMoney, fmtMoneyStr, fmtQty, buildAdresLines, hasText, getCurrencyOrPln } from "./format.js";
 
 // Renders a parsed FA(3) invoice to a fully self-contained HTML document.
 // Uses only inline `<style>` so the CSP `default-src 'none'` block does not
@@ -226,12 +226,12 @@ const Podmiot: FC<{ podmiot: InvoiceParty; role: PodmiotRole }> = ({ podmiot, ro
           <span class="ksef-podmiot__label">NIP:</span> {nipParts.join(" ")}
         </div>
       ) : null}
-      {podmiot.nrEORI && podmiot.nrEORI.trim() !== "" ? (
+      {hasText(podmiot.nrEORI) ? (
         <div class="ksef-podmiot__row">
           <span class="ksef-podmiot__label">EORI:</span> {podmiot.nrEORI}
         </div>
       ) : null}
-      {podmiot.nazwa && podmiot.nazwa.trim() !== "" ? (
+      {hasText(podmiot.nazwa) ? (
         <div class="ksef-podmiot__row ksef-podmiot__row--name">{podmiot.nazwa}</div>
       ) : null}
       {adresLines.map((line, i) => (
@@ -641,18 +641,11 @@ const RozliczenieSection: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   );
 };
 
-function fmtMoneyStr(kwota: string | null, currency: string | null | undefined): string {
-  if (kwota == null) return "—";
-  const n = parseFloat(kwota);
-  if (isNaN(n)) return kwota;
-  return `${n.toFixed(2)} ${currency ?? ""}`.trim();
-}
-
 const Platnosc: FC<{ invoice: InvoiceFa3 }> = ({ invoice }) => {
   const payment = invoice.payment;
   if (!payment) return null;
 
-  const currency = invoice.currency ?? "PLN";
+  const currency = getCurrencyOrPln(invoice.currency);
   const infoOPlatnosci =
     zaplacono(payment.zaplacono) ??
     znacznikZaplatyCzesciowej(payment.znacznikZaplatyCzesciowej) ??

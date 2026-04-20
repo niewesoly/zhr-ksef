@@ -1,6 +1,6 @@
 import AdmZip from "adm-zip";
 import { eq } from "drizzle-orm";
-import { db } from "../db/index.js";
+import { db, firstOrThrow } from "../db/index.js";
 import { invoices, syncRuns, tenants, type Tenant } from "../db/schema.js";
 import { withTenantTx } from "../db/tenant-tx.js";
 import { logger } from "../lib/logger.js";
@@ -50,7 +50,7 @@ export async function syncTenant(tenant: Tenant, opts: SyncOptions): Promise<Syn
   const credentials = loadTenantKsefCredentials(tenant);
 
   const syncRunId = await withTenantTx(tenant.id, async (tx) => {
-    const [row] = await tx
+    const rows = await tx
       .insert(syncRuns)
       .values({
         tenantId: tenant.id,
@@ -60,7 +60,7 @@ export async function syncTenant(tenant: Tenant, opts: SyncOptions): Promise<Syn
         dateTo: opts.dateTo?.slice(0, 10) ?? null,
       })
       .returning({ id: syncRuns.id });
-    return row!.id;
+    return firstOrThrow(rows, "sync_runs insert returned no row").id;
   });
 
   childLog.info({ syncRunId }, "sync started");
