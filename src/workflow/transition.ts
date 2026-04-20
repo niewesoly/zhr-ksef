@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { invoiceEvents, invoices } from "../db/schema.js";
-import type { Tx } from "../db/index.js";
+import { firstOrThrow, type Tx } from "../db/index.js";
 import {
   type InvoiceAction,
   InvalidTransitionError,
@@ -56,7 +56,7 @@ export async function transitionInvoice(
 
   const mergedMetadata = input.metadata ?? {};
 
-  const [event] = await tx
+  const events = await tx
     .insert(invoiceEvents)
     .values({
       tenantId: input.tenantId,
@@ -72,6 +72,6 @@ export async function transitionInvoice(
     id: input.invoiceId,
     fromStatus,
     toStatus,
-    eventId: event!.id,
+    eventId: firstOrThrow(events, "invoice_events insert returned no row").id,
   };
 }

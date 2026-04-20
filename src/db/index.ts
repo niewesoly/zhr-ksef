@@ -12,3 +12,5 @@ export const db = drizzle(sql, { schema });
 
 export type DB = typeof db;
 export type Tx = Parameters<Parameters<DB["transaction"]>[0]>[0];
+
+export { firstOrThrow } from "./helpers.js";

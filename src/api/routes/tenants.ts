@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { db } from "../../db/index.js";
+import { db, firstOrThrow } from "../../db/index.js";
 import { tenants } from "../../db/schema.js";
 import {
   encryptField,
@@ -96,7 +96,7 @@ adminApp.post("/", adminAuthMiddleware, async (c) => {
   const dekEnc = wrapDek(dek, id);
   const { id: apiKeyId, fullKey, hash } = await issueApiKey();
 
-  const [row] = await db
+  const rows = await db
     .insert(tenants)
     .values({
       id,
@@ -111,7 +111,7 @@ adminApp.post("/", adminAuthMiddleware, async (c) => {
 
   return c.json(
     {
-      tenant: publicTenantView(row!),
+      tenant: publicTenantView(firstOrThrow(rows, "tenants insert returned no row")),
       // `apiKey` is returned exactly once — the plaintext is never stored.
       apiKey: fullKey,
     },
@@ -178,14 +178,14 @@ tenantApp.patch("/:id", async (c) => {
   }
 
   patch.updatedAt = new Date();
-  const [updated] = await db
+  const updatedRows = await db
     .update(tenants)
     .set(patch)
     .where(eq(tenants.id, tenant.id))
     .returning();
 
   return c.json({
-    tenant: publicTenantView(updated!),
+    tenant: publicTenantView(firstOrThrow(updatedRows, "tenants update returned no row")),
     certificate: certValidation
       ? {
           notAfter: certValidation.notAfter,
@@ -240,7 +240,7 @@ tenantApp.delete("/:id/credentials", async (c) => {
   const tenant = c.get("tenant");
   requireSelf(c.req.param("id"), tenant.id);
 
-  const [updated] = await db
+  const updatedRows = await db
     .update(tenants)
     .set({
       certPemEnc: null,
@@ -253,7 +253,10 @@ tenantApp.delete("/:id/credentials", async (c) => {
     .returning();
 
   invalidateToken(tenant.id);
-  return c.json({ tenant: publicTenantView(updated!), cleared: true });
+  return c.json({
+    tenant: publicTenantView(firstOrThrow(updatedRows, "tenants credentials clear returned no row")),
+    cleared: true,
+  });
 });
 
 export const tenantsRouter = new Hono<AppEnv>();
