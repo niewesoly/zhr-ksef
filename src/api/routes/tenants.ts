@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { db, firstOrThrow } from "../../db/index.js";
 import { tenants } from "../../db/schema.js";
@@ -42,8 +43,8 @@ const credentialsSchema = z.object({
 function decodePem(b64: string, label: string): string {
   const buf = Buffer.from(b64, "base64");
   if (buf.byteLength === 0) {
-    throw Object.assign(new Error(`${label} is empty or not valid base64`), {
-      status: 400,
+    throw new HTTPException(400, {
+      message: `${label} is empty or not valid base64`,
     });
   }
   return buf.toString("utf8");
@@ -81,7 +82,7 @@ function publicTenantView(t: typeof tenants.$inferSelect) {
 function requireSelf(routeId: string, tenantId: string): void {
   if (routeId !== tenantId) {
     // Constant-like mismatch; do not disclose whether the tenant exists.
-    throw Object.assign(new Error("forbidden"), { status: 403 });
+    throw new HTTPException(403, { message: "forbidden" });
   }
 }
 
