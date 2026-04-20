@@ -19,6 +19,7 @@ import {
 } from "../../ksef/cert-validate.js";
 import { adminAuthMiddleware } from "../middleware/admin-auth.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { parseJsonBody } from "../middleware/parse-json-body.js";
 import type { AppEnv } from "../types.js";
 
 const NIP = z.string().regex(/^\d{10}$/, "NIP must be 10 digits");
@@ -88,8 +89,8 @@ function requireSelf(routeId: string, tenantId: string): void {
 
 const adminApp = new Hono<AppEnv>();
 
-adminApp.post("/", adminAuthMiddleware, async (c) => {
-  const body = await c.req.json().catch(() => ({}));
+adminApp.post("/", adminAuthMiddleware, parseJsonBody, async (c) => {
+  const body = c.get("body");
   const parsed = createTenantSchema.parse(body);
 
   const id = randomUUID();
@@ -138,11 +139,11 @@ tenantApp.get("/:id", async (c) => {
   return c.json({ tenant: publicTenantView(tenant) });
 });
 
-tenantApp.patch("/:id", async (c) => {
+tenantApp.patch("/:id", parseJsonBody, async (c) => {
   const tenant = c.get("tenant");
   requireSelf(c.req.param("id"), tenant.id);
 
-  const body = await c.req.json().catch(() => ({}));
+  const body = c.get("body");
   const parsed = patchTenantSchema.parse(body);
 
   const patch: Partial<typeof tenants.$inferInsert> = {};

@@ -15,6 +15,7 @@ import {
   InvalidTransitionError,
 } from "../../workflow/state-machine.js";
 import { transitionInvoice } from "../../workflow/transition.js";
+import { parseJsonBody } from "../middleware/parse-json-body.js";
 import type { AppEnv } from "../types.js";
 
 const CSP_HTML = [
@@ -111,11 +112,11 @@ const transitionSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
-invoicesRouter.post("/:iid/transition", async (c) => {
+invoicesRouter.post("/:iid/transition", parseJsonBody, async (c) => {
   const tx = c.get("tx");
   const tenant = c.get("tenant");
   const iid = c.req.param("iid");
-  const body = await c.req.json().catch(() => ({}));
+  const body = c.get("body");
   const parsed = transitionSchema.parse(body);
 
   try {

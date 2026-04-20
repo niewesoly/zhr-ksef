@@ -7,6 +7,7 @@ export interface AppVariables {
   logger: Logger;
   tenant: Tenant;
   tx: Tx;
+  body: unknown; // set by parseJsonBody middleware on mutating routes
 }
 
 export interface AppEnv {

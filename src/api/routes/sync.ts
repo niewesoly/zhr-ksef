@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { syncRuns } from "../../db/schema.js";
 import { syncQueue } from "../../jobs/queues.js";
+import { parseJsonBody } from "../middleware/parse-json-body.js";
 import type { AppEnv } from "../types.js";
 
 const rangeSchema = z
@@ -26,9 +27,9 @@ syncRouter.post("/", async (c) => {
   return c.json({ jobId: job.id, kind: "incremental", tenantId: tenant.id }, 202);
 });
 
-syncRouter.post("/range", async (c) => {
+syncRouter.post("/range", parseJsonBody, async (c) => {
   const tenant = c.get("tenant");
-  const body = await c.req.json().catch(() => ({}));
+  const body = c.get("body");
   const parsed = rangeSchema.parse(body);
   const job = await syncQueue.add("range", {
     kind: "range",
