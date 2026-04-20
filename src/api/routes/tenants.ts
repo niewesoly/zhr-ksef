@@ -20,15 +20,13 @@ import {
 import { adminAuthMiddleware } from "../middleware/admin-auth.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { parseJsonBody } from "../middleware/parse-json-body.js";
+import { KsefEnv, Nip } from "../openapi/schemas.js";
 import type { AppEnv } from "../types.js";
-
-const NIP = z.string().regex(/^\d{10}$/, "NIP must be 10 digits");
-const KSEF_ENV = z.enum(["production", "test", "demo"]);
 
 const createTenantSchema = z.object({
   name: z.string().min(1).max(200),
-  nip: NIP,
-  apiUrl: KSEF_ENV.default("test"),
+  nip: Nip,
+  apiUrl: KsefEnv.default("test"),
 });
 
 // PEM is delivered base64-encoded so callers can ship raw `.crt` / `.key`
@@ -53,8 +51,8 @@ function decodePem(b64: string, label: string): string {
 
 const patchTenantSchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  nip: NIP.optional(),
-  apiUrl: KSEF_ENV.optional(),
+  nip: Nip.optional(),
+  apiUrl: KsefEnv.optional(),
   syncEnabled: z.boolean().optional(),
   syncCron: z.string().max(100).nullable().optional(),
   credentials: credentialsSchema.optional(),

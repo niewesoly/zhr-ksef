@@ -1,6 +1,5 @@
 import { and, desc, eq, gte, lte, or } from "drizzle-orm";
 import { Hono } from "hono";
-import { z } from "zod";
 import type { Tx } from "../../db/index.js";
 import { invoiceEvents, invoices } from "../../db/schema.js";
 import type { InvoiceFa3 } from "../../ksef/parser.js";
@@ -16,6 +15,7 @@ import {
 } from "../../workflow/state-machine.js";
 import { transitionInvoice } from "../../workflow/transition.js";
 import { parseJsonBody } from "../middleware/parse-json-body.js";
+import { InvoiceListQuery, TransitionRequest } from "../openapi/schemas.js";
 import type { AppEnv } from "../types.js";
 
 const CSP_HTML = [
@@ -27,17 +27,6 @@ const CSP_HTML = [
   "form-action 'none'",
   "frame-ancestors 'none'",
 ].join("; ");
-
-const listQuerySchema = z.object({
-  status: z
-    .enum(["synced", "pending", "unassigned", "assigned", "imported", "dismissed"])
-    .optional(),
-  nip: z.string().max(20).optional(),
-  dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(200).default(50),
-});
 
 function invoiceSummary(row: typeof invoices.$inferSelect) {
   return {
@@ -63,7 +52,7 @@ export const invoicesRouter = new Hono<AppEnv>();
 
 invoicesRouter.get("/", async (c) => {
   const tx = c.get("tx");
-  const query = listQuerySchema.parse(
+  const query = InvoiceListQuery.parse(
     Object.fromEntries(new URL(c.req.url).searchParams),
   );
 
@@ -106,18 +95,12 @@ invoicesRouter.get("/:iid", async (c) => {
   });
 });
 
-const transitionSchema = z.object({
-  action: z.enum(["release", "assign", "import", "dismiss"]),
-  actor: z.string().max(200).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
 invoicesRouter.post("/:iid/transition", parseJsonBody, async (c) => {
   const tx = c.get("tx");
   const tenant = c.get("tenant");
   const iid = c.req.param("iid");
   const body = c.get("body");
-  const parsed = transitionSchema.parse(body);
+  const parsed = TransitionRequest.parse(body);
 
   try {
     const result = await transitionInvoice(tx, {
