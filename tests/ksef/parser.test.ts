@@ -360,7 +360,7 @@ suite("parseInvoiceFa3: Podmiot guards", () => {
     <RodzajFaktury>VAT</RodzajFaktury>
   </Fa>
 </Faktura>`;
-    assert.throws(() => parseInvoiceFa3(xml), /Podmiot1|sprzedawca/i);
+    assert.throws(() => parseInvoiceFa3(xml, "TEST"), /Podmiot1|sprzedawca/i);
   });
 
   test("parseInvoiceFa3 throws when Podmiot2 (nabywca) is missing", () => {
@@ -373,6 +373,6 @@ suite("parseInvoiceFa3: Podmiot guards", () => {
     <RodzajFaktury>VAT</RodzajFaktury>
   </Fa>
 </Faktura>`;
-    assert.throws(() => parseInvoiceFa3(xml), /Podmiot2|nabywca/i);
+    assert.throws(() => parseInvoiceFa3(xml, "TEST"), /Podmiot2|nabywca/i);
   });
 });
