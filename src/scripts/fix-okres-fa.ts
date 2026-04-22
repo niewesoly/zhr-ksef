@@ -26,8 +26,10 @@ try {
     FROM invoices
     WHERE invoice_xml IS NOT NULL
       AND (
-        parsed_data->>'okresFa' = '[object Object]'
-        OR parsed_data->>'okresFaKorygowanej' = '[object Object]'
+        parsed_data->>'okresFa' ILIKE '%object object%'
+        OR parsed_data->>'okresFaKorygowanej' ILIKE '%object object%'
+        OR jsonb_typeof(parsed_data->'okresFa') = 'object'
+        OR jsonb_typeof(parsed_data->'okresFaKorygowanej') = 'object'
       )
   `;
 
