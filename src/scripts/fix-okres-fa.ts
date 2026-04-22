@@ -19,40 +19,55 @@ if (!url) {
 const sql = postgres(url, { max: 1 });
 
 try {
-  const rows = await sql<
-    { id: string; ksef_number: string; tenant_id: string; invoice_xml: string }[]
-  >`
-    SELECT id, ksef_number, tenant_id, invoice_xml
-    FROM invoices
-    WHERE invoice_xml IS NOT NULL
-      AND (
-        parsed_data->>'okresFa' ILIKE '%object object%'
-        OR parsed_data->>'okresFaKorygowanej' ILIKE '%object object%'
-        OR jsonb_typeof(parsed_data->'okresFa') = 'object'
-        OR jsonb_typeof(parsed_data->'okresFaKorygowanej') = 'object'
-      )
-  `;
+  // Fetch all tenants to iterate over them and set RLS properly
+  const allTenants = await sql<{ id: string }[]>`SELECT id FROM tenants`;
+  console.log(`Scanning ${allTenants.length} tenant(s) for invoices to repair...`);
 
-  console.log(`Found ${rows.length} invoice(s) to repair.`);
+  let repairedCount = 0;
+  let scannedRowsCount = 0;
 
-  let repaired = 0;
-  for (const row of rows) {
-    try {
-      const parsed = parseInvoiceFa3(row.invoice_xml, row.ksef_number);
-      await sql`
-        UPDATE invoices
-        SET parsed_data = ${sql.json(JSON.parse(JSON.stringify(parsed)))},
-            updated_at  = now()
-        WHERE id = ${row.id}
+  for (const tenant of allTenants) {
+    await sql.begin(async (tx) => {
+      // 1) Set RLS context for this transaction
+      await tx`SELECT set_config('app.tenant_id', ${tenant.id}, true)`;
+
+      // 2) Find strictly corrupted records for THIS tenant
+      const rows = await tx<
+        { id: string; ksef_number: string; invoice_xml: string }[]
+      >`
+        SELECT id, ksef_number, invoice_xml
+        FROM invoices
+        WHERE invoice_xml IS NOT NULL
+          AND (
+            parsed_data->>'okresFa' ILIKE '%object object%'
+            OR parsed_data->>'okresFaKorygowanej' ILIKE '%object object%'
+            OR jsonb_typeof(parsed_data->'okresFa') = 'object'
+            OR jsonb_typeof(parsed_data->'okresFaKorygowanej') = 'object'
+          )
       `;
-      repaired++;
-      console.log(`  ✓ ${row.ksef_number} (tenant ${row.tenant_id})`);
-    } catch (err) {
-      console.error(`  ✗ ${row.ksef_number}: ${err instanceof Error ? err.message : err}`);
-    }
+
+      scannedRowsCount += rows.length;
+
+      // 3) Re-parse and update
+      for (const row of rows) {
+        try {
+          const parsed = parseInvoiceFa3(row.invoice_xml, row.ksef_number);
+          await tx`
+            UPDATE invoices
+            SET parsed_data = ${tx.json(JSON.parse(JSON.stringify(parsed)))},
+                updated_at  = now()
+            WHERE id = ${row.id}
+          `;
+          repairedCount++;
+          console.log(`  ✓ ${row.ksef_number} (tenant ${tenant.id})`);
+        } catch (err) {
+          console.error(`  ✗ ${row.ksef_number}: ${err instanceof Error ? err.message : err}`);
+        }
+      }
+    });
   }
 
-  console.log(`\nDone. Repaired ${repaired}/${rows.length} invoice(s).`);
+  console.log(`\nDone. Repaired ${repairedCount}/${scannedRowsCount} invoice(s).`);
 } finally {
   await sql.end();
 }
