@@ -347,6 +347,54 @@ suite("parseInvoiceFa3: parser extensions", () => {
     const inv = parseInvoiceFa3(loadFixture("sample_fa3.xml"), "K");
     assert.strictEqual(inv.okresFa, null);
   });
+
+  test("OkresFa handles P_6_Od/P_6_Do date-range (same date)", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Faktura xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="FA (3)" wersjaSchemy="1-0E">FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+  </Naglowek>
+  <Podmiot1><DaneIdentyfikacyjne><NIP>1111111111</NIP><Nazwa>S</Nazwa></DaneIdentyfikacyjne></Podmiot1>
+  <Podmiot2><DaneIdentyfikacyjne><NIP>2222222222</NIP><Nazwa>B</Nazwa></DaneIdentyfikacyjne></Podmiot2>
+  <Fa>
+    <KodWaluty>PLN</KodWaluty>
+    <P_1>2026-04-17</P_1>
+    <P_2>FV/1</P_2>
+    <P_15>100</P_15>
+    <OkresFa>
+      <P_6_Od>2026-04-17</P_6_Od>
+      <P_6_Do>2026-04-17</P_6_Do>
+    </OkresFa>
+  </Fa>
+</Faktura>`;
+    const inv = parseInvoiceFa3(xml, "K");
+    assert.strictEqual(inv.okresFa, "2026-04-17");
+  });
+
+  test("OkresFa handles P_6_Od/P_6_Do date-range (different dates)", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Faktura xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="FA (3)" wersjaSchemy="1-0E">FA</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+  </Naglowek>
+  <Podmiot1><DaneIdentyfikacyjne><NIP>1111111111</NIP><Nazwa>S</Nazwa></DaneIdentyfikacyjne></Podmiot1>
+  <Podmiot2><DaneIdentyfikacyjne><NIP>2222222222</NIP><Nazwa>B</Nazwa></DaneIdentyfikacyjne></Podmiot2>
+  <Fa>
+    <KodWaluty>PLN</KodWaluty>
+    <P_1>2026-04-01</P_1>
+    <P_2>FV/2</P_2>
+    <P_15>200</P_15>
+    <OkresFa>
+      <P_6_Od>2026-04-01</P_6_Od>
+      <P_6_Do>2026-04-30</P_6_Do>
+    </OkresFa>
+  </Fa>
+</Faktura>`;
+    const inv = parseInvoiceFa3(xml, "K");
+    assert.strictEqual(inv.okresFa, "2026-04-01 – 2026-04-30");
+  });
 });
 
 suite("parseInvoiceFa3: Podmiot guards", () => {

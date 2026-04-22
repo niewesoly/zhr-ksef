@@ -127,6 +127,46 @@ adminApp.delete("/:id", adminAuthMiddleware, async (c) => {
   return c.json({ deleted: true });
 });
 
+adminApp.post("/:id/rotate-key", adminAuthMiddleware, async (c) => {
+  const id = c.req.param("id");
+  const [tenant] = await db
+    .select()
+    .from(tenants)
+    .where(eq(tenants.id, id))
+    .limit(1);
+  if (!tenant) return c.json({ error: "not_found" }, 404);
+
+  const { id: newId, fullKey, hash } = await issueApiKey();
+  const now = new Date();
+  const [updated] = await db
+    .update(tenants)
+    .set({
+      apiKeyIdPrev: tenant.apiKeyId,
+      apiKeyHashPrev: tenant.apiKeyHash,
+      apiKeyRotatedAt: now,
+      apiKeyId: newId,
+      apiKeyHash: hash,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(tenants.id, tenant.id),
+        eq(tenants.apiKeyId, tenant.apiKeyId),
+      ),
+    )
+    .returning();
+
+  if (!updated) {
+    return c.json({ error: "rotation_conflict" }, 409);
+  }
+
+  return c.json({
+    tenant: publicTenantView(updated),
+    apiKey: fullKey,
+    gracePeriodHours: 24,
+  });
+});
+
 const tenantApp = new Hono<AppEnv>();
 
 tenantApp.use("*", authMiddleware);

@@ -292,20 +292,20 @@ const VAT_BUCKETS: ReadonlyArray<{
   taxPLN: string | null;
   label: string;
 }> = [
-  { net: "P_13_1", tax: "P_14_1", taxPLN: "P_14_1W", label: "23% lub 22%" },
-  { net: "P_13_2", tax: "P_14_2", taxPLN: "P_14_2W", label: "8% lub 7%" },
-  { net: "P_13_3", tax: "P_14_3", taxPLN: "P_14_3W", label: "5%" },
-  { net: "P_13_4", tax: "P_14_4", taxPLN: "P_14_4W", label: "4% lub 3%" },
-  { net: "P_13_5", tax: "P_14_5", taxPLN: "P_14_5W", label: "OSS" },
-  { net: "P_13_6_1", tax: null, taxPLN: null, label: "0% (krajowe)" },
-  { net: "P_13_6_2", tax: null, taxPLN: null, label: "0% WDT" },
-  { net: "P_13_6_3", tax: null, taxPLN: null, label: "0% eksport" },
-  { net: "P_13_7", tax: null, taxPLN: null, label: "zwolnione od podatku" },
-  { net: "P_13_8", tax: null, taxPLN: null, label: "np. z wył. art. 100 ust. 1 pkt 4" },
-  { net: "P_13_9", tax: null, taxPLN: null, label: "np. art. 100 ust. 1 pkt 4" },
-  { net: "P_13_10", tax: null, taxPLN: null, label: "odwrotne obciążenie" },
-  { net: "P_13_11", tax: null, taxPLN: null, label: "marża" },
-];
+    { net: "P_13_1", tax: "P_14_1", taxPLN: "P_14_1W", label: "23% lub 22%" },
+    { net: "P_13_2", tax: "P_14_2", taxPLN: "P_14_2W", label: "8% lub 7%" },
+    { net: "P_13_3", tax: "P_14_3", taxPLN: "P_14_3W", label: "5%" },
+    { net: "P_13_4", tax: "P_14_4", taxPLN: "P_14_4W", label: "4% lub 3%" },
+    { net: "P_13_5", tax: "P_14_5", taxPLN: "P_14_5W", label: "OSS" },
+    { net: "P_13_6_1", tax: null, taxPLN: null, label: "0% (krajowe)" },
+    { net: "P_13_6_2", tax: null, taxPLN: null, label: "0% WDT" },
+    { net: "P_13_6_3", tax: null, taxPLN: null, label: "0% eksport" },
+    { net: "P_13_7", tax: null, taxPLN: null, label: "zwolnione od podatku" },
+    { net: "P_13_8", tax: null, taxPLN: null, label: "np. z wył. art. 100 ust. 1 pkt 4" },
+    { net: "P_13_9", tax: null, taxPLN: null, label: "np. art. 100 ust. 1 pkt 4" },
+    { net: "P_13_10", tax: null, taxPLN: null, label: "odwrotne obciążenie" },
+    { net: "P_13_11", tax: null, taxPLN: null, label: "marża" },
+  ];
 
 // ─── Parser ───────────────────────────────────────────────────────────────────
 
@@ -770,6 +770,30 @@ function parseStopka(faktura: Record<string, unknown>): Stopka | null {
   return { informacje, rejestry };
 }
 
+/**
+ * OkresFa / OkresFaKorygowanej can be either a plain string or an object
+ * with P_6_Od / P_6_Do children (date-range variant).  Handle both.
+ */
+function parseOkres(
+  parent: Record<string, unknown>,
+  fieldName: string,
+): string | null {
+  const raw = findField(parent, fieldName);
+  if (raw == null) return null;
+
+  // Object variant: { P_6_Od, P_6_Do }
+  if (isRecord(raw)) {
+    const od = findFieldString(raw, "P_6_Od");
+    const doVal = findFieldString(raw, "P_6_Do");
+    if (od && doVal) return od === doVal ? od : `${od} – ${doVal}`;
+    return od ?? doVal;
+  }
+
+  // Plain string variant
+  const s = String(raw).trim();
+  return s.length > 0 ? s : null;
+}
+
 export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
   if (Buffer.byteLength(xml, "utf8") > MAX_INVOICE_XML_BYTES) {
     throw new Error(
@@ -796,7 +820,7 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
   // Correction data
   const daneFaKorygowanej = parseDaneFaKorygowanej(fa);
   const correctionReason = findFieldString(fa, "PrzyczynaKorekty");
-  const okresFaKorygowanej = findFieldString(fa, "OkresFaKorygowanej");
+  const okresFaKorygowanej = parseOkres(fa, "OkresFaKorygowanej");
 
   // Payment
   const platnosci = findField(fa, "Platnosc");
@@ -842,6 +866,6 @@ export function parseInvoiceFa3(xml: string, ksefNumber: string): InvoiceFa3 {
     warunkiTransakcji: parseWarunkiTransakcji(fa),
     stopka: parseStopka(faktura),
     fakturaZaliczkowa: parseFakturaZaliczkowa(fa),
-    okresFa: findFieldString(fa, "OkresFa"),
+    okresFa: parseOkres(fa, "OkresFa"),
   };
 }
