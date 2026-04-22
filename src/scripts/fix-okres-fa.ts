@@ -26,8 +26,8 @@ try {
     FROM invoices
     WHERE invoice_xml IS NOT NULL
       AND (
-        jsonb_typeof(parsed_data->'okresFa') = 'object'
-        OR jsonb_typeof(parsed_data->'okresFaKorygowanej') = 'object'
+        parsed_data->>'okresFa' = '[object Object]'
+        OR parsed_data->>'okresFaKorygowanej' = '[object Object]'
       )
   `;
 
