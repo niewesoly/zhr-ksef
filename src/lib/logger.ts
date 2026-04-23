@@ -1,14 +1,11 @@
+import { hostname } from "node:os";
 import { pino } from "pino";
 import { config } from "../config.js";
 
+// Wildcard paths — pino walks nested objects and censors any matching key,
+// regardless of nesting depth. Covers the plan-mandated secrets plus their
+// `_enc` envelope-encrypted variants.
 const redactPaths = [
-  "req.headers.authorization",
-  'req.headers["x-api-key"]',
-  'req.headers["x-admin-key"]',
-  "req.body.cert_pem",
-  "req.body.key_pem",
-  "req.body.key_passphrase",
-  "req.body.api_key",
   "*.cert_pem",
   "*.key_pem",
   "*.key_passphrase",
@@ -47,7 +44,7 @@ function serializeError(err: unknown, depth = 0): SerializedError | undefined {
 export const logger = pino({
   level: config.LOG_LEVEL,
   redact: { paths: redactPaths, censor: "[redacted]" },
-  base: { service: "zhr-ksef" },
+  base: { service: "zhr-ksef", pid: process.pid, hostname: hostname() },
   formatters: {
     level: (label) => ({ level: label }),
   },
