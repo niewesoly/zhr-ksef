@@ -106,6 +106,9 @@ cp .env.standalone.example .env.standalone
 chmod 600 .env.standalone
 
 docker compose --env-file .env.standalone -f docker-compose.standalone.yml up -d --build
+
+# Smoke check -- powinien zwrocic {"status":"ok"} (PORT domyslnie 3000).
+curl -fsS http://localhost:${PORT:-3000}/health
 ```
 
 ### Aktualizacja
@@ -115,7 +118,7 @@ git pull
 docker compose --env-file .env.standalone -f docker-compose.standalone.yml up -d --build
 ```
 
-Migracje odpalaja sie w dedykowanym serwisie `migrate` przed startem `app`/`worker` — nie trzeba nic robic recznie.
+Migracje odpalaja sie w dedykowanym serwisie `migrate` przed startem `app`/`worker` -- nie trzeba nic robic recznie.
 
 ### Typowe operacje
 
