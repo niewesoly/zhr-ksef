@@ -93,3 +93,41 @@ tests/
 - **Row Level Security** -- izolacja danych miedzy tenantami (PostgreSQL RLS)
 - **Ochrona SSRF** -- `api_url` jako enum, walidacja URL z odpowiedzi KSeF
 - **Redakcja logow** -- pino z lista pol do redakcji (cert, klucze, API key)
+
+## Wdrozenie (standalone)
+
+Samowystarczalny stack dla pojedynczego serwera bez zewnetrznej bazy danych. Uruchamia Postgresa, Redisa, aplikacje i workera w kontenerach; migracje odpalaja sie automatycznie przy kazdym `up`. Tylko aplikacja publikuje port na hoscie.
+
+### Pierwszy start
+
+```bash
+cp .env.standalone.example .env.standalone
+# Edytuj .env.standalone i podmien wszystkie wartosci `change-me-*`.
+chmod 600 .env.standalone
+
+docker compose --env-file .env.standalone -f docker-compose.standalone.yml up -d --build
+```
+
+### Aktualizacja
+
+```bash
+git pull
+docker compose --env-file .env.standalone -f docker-compose.standalone.yml up -d --build
+```
+
+Migracje odpalaja sie w dedykowanym serwisie `migrate` przed startem `app`/`worker` — nie trzeba nic robic recznie.
+
+### Typowe operacje
+
+```bash
+# Logi aplikacji i workera
+docker compose --env-file .env.standalone -f docker-compose.standalone.yml logs -f app worker
+
+# Dostep do bazy
+docker compose --env-file .env.standalone -f docker-compose.standalone.yml exec postgres \
+  psql -U ksef -d ksef
+
+# Zatrzymanie stacku
+docker compose --env-file .env.standalone -f docker-compose.standalone.yml down
+# (dodaj -v aby usunac tez volumeny postgresa i redisa)
+```
