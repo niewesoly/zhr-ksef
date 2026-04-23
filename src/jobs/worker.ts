@@ -10,12 +10,14 @@ const connection = createRedisConnection();
 
 async function handleCertCheck(job: Job<CertCheckJobData>): Promise<void> {
   // Implementation lands alongside tenants routes (phase 6).
-  logger.info({ jobId: job.id, data: job.data }, "cert-check job (not yet implemented)");
+  const log = logger.child({ module: "cert-check-job", jobId: job.id });
+  log.info({ data: job.data }, "cert-check job (not yet implemented)");
 }
 
 async function handlePdf(job: Job<PdfJobData>): Promise<void> {
   // Implementation lands in phase 8 (visualization).
-  logger.info({ jobId: job.id, data: job.data }, "pdf job (not yet implemented)");
+  const log = logger.child({ module: "pdf-job", jobId: job.id });
+  log.info({ data: job.data }, "pdf job (not yet implemented)");
 }
 
 const workers: Worker[] = [
