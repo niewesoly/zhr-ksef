@@ -1,0 +1,100 @@
+# Self-contained production stack: Postgres + Redis + migrate + app + worker.
+# Intended for a single server that does NOT have a managed Postgres. All
+# services share the default compose network; only `app` publishes a host
+# port. Secrets live in `.env.standalone` (copy from `.env.standalone.example`).
+#
+# Usage:
+#   cp .env.standalone.example .env.standalone
+#   # edit .env.standalone — set all `change-me-*` values
+#   docker compose --env-file .env.standalone -f docker-compose.standalone.yml up -d --build
+#
+# The --env-file flag is required on every invocation — it both supplies
+# values for ${...} interpolation below and is fed to each container's env.
+
+name: zhr-ksef-standalone
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      - --appendonly
+      - "yes"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "$$REDIS_PASSWORD", "PING"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Duplicated from command: above so the healthcheck can read $REDIS_PASSWORD.
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+  # migrate has no env_file: it only needs DATABASE_URL (built below). DATABASE_URL
+  # must NOT appear in .env.standalone — compose is the source of truth for it.
+  migrate:
+    build: .
+    command: ["node", "dist/db/migrate.js"]
+    restart: "no"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    env_file: .env.standalone
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    build: .
+    restart: unless-stopped
+    command: ["node", "dist/jobs/worker.js"]
+    env_file: .env.standalone
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://default:${REDIS_PASSWORD}@redis:6379
+    # No dependency on `app`: worker and app are peers reading the same queues/DB.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  redisdata:
