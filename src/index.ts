@@ -25,6 +25,8 @@ app.onError(errorHandler);
 app.notFound((c) => c.json({ error: "not_found" }, 404));
 
 app.use("*", correlationMiddleware);
+// Must follow correlationMiddleware so the access log picks up the
+// correlationId-tagged child logger; otherwise it falls back to rootLogger.
 app.use("*", requestLogMiddleware);
 
 if (config.CORS_ORIGINS.length > 0) {
