@@ -2,10 +2,20 @@ import { hostname } from "node:os";
 import { pino } from "pino";
 import { config } from "../config.js";
 
-// Wildcard paths — pino walks nested objects and censors any matching key,
-// regardless of nesting depth. Covers the plan-mandated secrets plus their
-// `_enc` envelope-encrypted variants.
+// Pino's `*` matches exactly one path segment (not any depth). We therefore
+// list each secret key at depths 0, 1, and 2 so it is redacted whether it
+// sits at the root, one level under (e.g. `{ tenant: { cert_pem } }`), or
+// two levels under (e.g. `{ result: { tenant: { cert_pem } } }`). Extend
+// to `*.*.*.` if a future logger call nests deeper.
 const redactPaths = [
+  "cert_pem",
+  "key_pem",
+  "key_passphrase",
+  "api_key",
+  "dek_enc",
+  "cert_pem_enc",
+  "key_pem_enc",
+  "key_passphrase_enc",
   "*.cert_pem",
   "*.key_pem",
   "*.key_passphrase",
@@ -14,6 +24,14 @@ const redactPaths = [
   "*.cert_pem_enc",
   "*.key_pem_enc",
   "*.key_passphrase_enc",
+  "*.*.cert_pem",
+  "*.*.key_pem",
+  "*.*.key_passphrase",
+  "*.*.api_key",
+  "*.*.dek_enc",
+  "*.*.cert_pem_enc",
+  "*.*.key_pem_enc",
+  "*.*.key_passphrase_enc",
 ];
 
 interface SerializedError {
