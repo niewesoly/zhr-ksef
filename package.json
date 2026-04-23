@@ -10,8 +10,8 @@
     "db:generate": "node --env-file-if-exists=.env ./node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "tsx --env-file=.env src/db/migrate.ts",
     "db:studio": "node --env-file=.env ./node_modules/drizzle-kit/bin.cjs studio",
-    "test": "node --import tsx --test 'tests/**/*.test.ts'",
-    "test:watch": "node --import tsx --test --watch 'tests/**/*.test.ts'"
+    "test": "node --import tsx --env-file=.env.test --test 'tests/**/*.test.ts'",
+    "test:watch": "node --import tsx --env-file=.env.test --test --watch 'tests/**/*.test.ts'"
   },
   "dependencies": {
     "@fontsource/roboto": "^5.2.10",

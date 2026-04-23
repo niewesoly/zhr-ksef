@@ -1,14 +1,21 @@
+import { hostname } from "node:os";
 import { pino } from "pino";
 import { config } from "../config.js";
 
+// Pino's `*` matches exactly one path segment (not any depth). We therefore
+// list each secret key at depths 0, 1, and 2 so it is redacted whether it
+// sits at the root, one level under (e.g. `{ tenant: { cert_pem } }`), or
+// two levels under (e.g. `{ result: { tenant: { cert_pem } } }`). Extend
+// to `*.*.*.` if a future logger call nests deeper.
 const redactPaths = [
-  "req.headers.authorization",
-  'req.headers["x-api-key"]',
-  'req.headers["x-admin-key"]',
-  "req.body.cert_pem",
-  "req.body.key_pem",
-  "req.body.key_passphrase",
-  "req.body.api_key",
+  "cert_pem",
+  "key_pem",
+  "key_passphrase",
+  "api_key",
+  "dek_enc",
+  "cert_pem_enc",
+  "key_pem_enc",
+  "key_passphrase_enc",
   "*.cert_pem",
   "*.key_pem",
   "*.key_passphrase",
@@ -17,6 +24,14 @@ const redactPaths = [
   "*.cert_pem_enc",
   "*.key_pem_enc",
   "*.key_passphrase_enc",
+  "*.*.cert_pem",
+  "*.*.key_pem",
+  "*.*.key_passphrase",
+  "*.*.api_key",
+  "*.*.dek_enc",
+  "*.*.cert_pem_enc",
+  "*.*.key_pem_enc",
+  "*.*.key_passphrase_enc",
 ];
 
 interface SerializedError {
@@ -47,7 +62,7 @@ function serializeError(err: unknown, depth = 0): SerializedError | undefined {
 export const logger = pino({
   level: config.LOG_LEVEL,
   redact: { paths: redactPaths, censor: "[redacted]" },
-  base: { service: "zhr-ksef" },
+  base: { service: "zhr-ksef", pid: process.pid, hostname: hostname() },
   formatters: {
     level: (label) => ({ level: label }),
   },

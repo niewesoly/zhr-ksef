@@ -9,6 +9,7 @@ import { logger } from "./lib/logger.js";
 import { authMiddleware } from "./api/middleware/auth.js";
 import { correlationMiddleware } from "./api/middleware/correlation.js";
 import { errorHandler } from "./api/middleware/error-handler.js";
+import { requestLogMiddleware } from "./api/middleware/request-log.js";
 import { tenantScopeMiddleware } from "./api/middleware/tenant-scope.js";
 import { tenantTxMiddleware } from "./api/middleware/tenant-tx.js";
 import { buildOpenApiDocument } from "./api/openapi/spec.js";
@@ -24,6 +25,9 @@ app.onError(errorHandler);
 app.notFound((c) => c.json({ error: "not_found" }, 404));
 
 app.use("*", correlationMiddleware);
+// Must follow correlationMiddleware so the access log picks up the
+// correlationId-tagged child logger; otherwise it falls back to rootLogger.
+app.use("*", requestLogMiddleware);
 
 if (config.CORS_ORIGINS.length > 0) {
   app.use(
